@@ -12,7 +12,7 @@ export function TextSizeToggle() {
   }
 
   return (
-    <button className="text-size-toggle" type="button" aria-pressed={enlarged} onClick={toggleTextSize}>
+    <button className="text-size-toggle" type="button" aria-label="Letra maior" aria-pressed={enlarged} onClick={toggleTextSize}>
       <span aria-hidden="true">{enlarged ? "A−" : "A+"}</span>
       <span>{enlarged ? "Letra padrão" : "Letra maior"}</span>
     </button>

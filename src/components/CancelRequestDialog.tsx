@@ -22,7 +22,15 @@ export function CancelRequestDialog({ protocol, loading, error, onKeep, onConfir
   }, []);
 
   return (
-    <dialog ref={ref} className="cancel-dialog" aria-labelledby="cancel-title" aria-describedby="cancel-description" onCancel={(event) => { event.preventDefault(); if (!loading) onKeep(); }}>
+    <dialog ref={ref} tabIndex={-1} className="cancel-dialog" aria-labelledby="cancel-title" aria-describedby="cancel-description" onCancel={(event) => { event.preventDefault(); if (!loading) onKeep(); }} onKeyDown={(event) => {
+      if (event.key !== "Tab") return;
+      const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+      const first = buttons[0];
+      const last = buttons.at(-1);
+      if (!first || !last) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === event.currentTarget)) { event.preventDefault(); first.focus(); }
+    }}>
       <h2 id="cancel-title">Cancelar este pedido?</h2>
       <p className="lookup-protocol">{protocol}</p>
       <p id="cancel-description">O pedido será excluído do Farol Amigo. Essa ação não pode ser desfeita. Se mudar de ideia depois, será necessário fazer um novo pedido.</p>

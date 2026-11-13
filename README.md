@@ -23,7 +23,7 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 13 de 15: tratamento comum de falhas HTTP, respostas inválidas e limite de espera no navegador, validação dos dados recebidos e recuperação das consultas. O CRUD completo de pedidos continua validado no Orion 4.5.0 local em `http://localhost:1026`.
+Etapa 14 de 15: revisão de acessibilidade e telas pequenas, com conferência no Brave do Windows em desktop e largura simulada de 320 pixels. Inclui foco no protocolo inválido, navegação de teclado na edição e confirmação, texto ampliado e ajustes de rolagem e áreas seguras. O CRUD completo continua validado no Orion 4.5.0 local.
 
 Consulte [o guia do Orion local](docs/orion-local.md) para comandos, atributos provisórios, rotas HTTP, testes e preparação da migração futura.
 
@@ -123,7 +123,19 @@ As chamadas do navegador têm limite de 20 segundos, incluindo leitura do corpo 
 
 Não há repetição automática de operações de escrita. Ao tentar reenviar o mesmo rascunho, a chave do formulário é mantida para recuperar o protocolo sem duplicação. Em falhas ou tempo limite de edição/cancelamento, consulte o protocolo para verificar o resultado, pois uma operação pode ter sido gravada antes da perda da resposta.
 
-A lista vazia distingue ausência de cadastros de uma pesquisa sem resultados. O botão de recuperação da página de erro de cruzamento usa a função `retry` da versão instalada do Next.js, refazendo a consulta ao servidor. Esses estados ainda devem passar pela revisão visual e de teclado.
+A lista vazia distingue ausência de cadastros de uma pesquisa sem resultados. O botão de recuperação da página de erro de cruzamento usa a função `retry` da versão instalada do Next.js, refazendo a consulta ao servidor.
+
+### Acessibilidade e telas pequenas
+
+- Link de salto para o conteúdo, rótulos associados aos campos, grupos de opções nativos e mensagens de erro/status.
+- Foco direcionado ao campo de protocolo inválido; foco visível em controles, títulos de resultado e ações.
+- Botão de letra maior com nome acessível estável e estado `aria-pressed`; textos e espaçamentos ampliados para 125% durante a navegação.
+- Confirmação de cancelamento com foco inicial em “Manter pedido”, ciclo de Tab/Shift+Tab entre as ações, Escape antes do envio e bloqueio da rolagem ao fundo.
+- Quebra de protocolos e textos longos, botões que se reorganizam em telas estreitas, margens de rolagem e CSS preparado para áreas seguras e cores forçadas.
+
+Conferido no Brave: página inicial em desktop e 320 pixels, letra maior, protocolo longo, erro de protocolo com foco no campo, formulário de edição com navegação por teclado, retorno sem salvar, confirmação com Tab e fechamento sem exclusão. Um pedido e cruzamento temporários foram usados e removidos após a conferência; os dados originais permaneceram intactos.
+
+Os nove pares de texto/fundo avaliados apresentaram contraste mínimo de 4,83:1 (acima do limiar de 4,5:1 usado na revisão). A conferência foi realizada no navegador desktop com emulação de largura; aparelhos físicos, leitores de tela e o modo de alto contraste do sistema não foram testados. O CSS de cores forçadas e áreas seguras foi revisado no código.
 
 ### Teste de integração local
 

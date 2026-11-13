@@ -20,6 +20,7 @@ export function RequestLookup({ initialProtocol }: { initialProtocol: string }) 
   const { lookup, update, cancel, clearError, foundRequest, error, loading } = usePedido();
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const noticeRef = useRef<HTMLParagraphElement>(null);
+  const protocolInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (initialProtocol) void lookup(initialProtocol); }, [initialProtocol, lookup]);
 
@@ -30,6 +31,7 @@ export function RequestLookup({ initialProtocol }: { initialProtocol: string }) 
     setProtocol(normalized);
     if (!requestKeyFromProtocol(normalized)) {
       setValidation("Copie o protocolo completo que começa com FA, incluindo os números e as letras.");
+      requestAnimationFrame(() => protocolInput.current?.focus());
       return;
     }
     setValidation(undefined);
@@ -73,7 +75,7 @@ export function RequestLookup({ initialProtocol }: { initialProtocol: string }) 
     <div className="request-lookup">
       <h1>Seu pedido</h1>
       <form onSubmit={submit} className="protocol-search" noValidate>
-        <TextField label="Número do protocolo" value={protocol} onChange={(event) => { setProtocol(event.target.value); setValidation(undefined); }} placeholder="FA-AAMM-…" hint="Cole o protocolo inteiro. Você não precisa informar seu nome." error={validation} disabled={loading || editing || canceling} autoComplete="off" autoCapitalize="characters" spellCheck={false} required maxLength={40} />
+        <TextField inputRef={protocolInput} name="protocolo" label="Número do protocolo" value={protocol} onChange={(event) => { setProtocol(event.target.value); setValidation(undefined); }} placeholder="FA-AAMM-…" hint="Cole o protocolo inteiro. Você não precisa informar seu nome." error={validation} disabled={loading || editing || canceling} autoComplete="off" autoCapitalize="characters" spellCheck={false} required maxLength={40} />
         <Button type="submit" loading={loading && !editing && !canceling} disabled={editing || canceling}>Consultar pedido</Button>
       </form>
       {loading && !editing && !canceling ? <p role="status" className="lookup-feedback">Consultando o pedido…</p> : null}

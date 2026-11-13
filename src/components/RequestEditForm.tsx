@@ -34,7 +34,7 @@ export function RequestEditForm({ request, loading, error, onSave, onCancel }: R
   }
 
   return (
-    <form onSubmit={submit} className="request-edit-form" noValidate>
+    <form onSubmit={submit} className="request-edit-form" aria-busy={loading} noValidate>
       <h2 ref={heading} tabIndex={-1}>O que acontece neste farol?</h2>
       <p className="preview-description">Você pode mudar o motivo e o comentário enquanto o pedido estiver enviado ou em análise.</p>
       <fieldset className="reason-group" ref={fieldset} disabled={loading} role="radiogroup" aria-invalid={attempted && Boolean(errors.reason) || undefined} aria-describedby={attempted && errors.reason ? "reason-error" : undefined}>
@@ -44,7 +44,7 @@ export function RequestEditForm({ request, loading, error, onSave, onCancel }: R
       </fieldset>
       <div className="field comment-field">
         <label htmlFor="edit-comment">Quer contar mais? (opcional)</label>
-        <textarea id="edit-comment" ref={commentInput} className="text-input" rows={4} value={comment} onChange={(event) => setComment(event.target.value)} disabled={loading} maxLength={MAX_COMMENT_LENGTH} aria-describedby={`edit-comment-hint edit-comment-count${attempted && errors.comment ? " edit-comment-error" : ""}`} aria-invalid={attempted && Boolean(errors.comment) || undefined} />
+        <textarea id="edit-comment" name="comentario" ref={commentInput} className="text-input" rows={4} value={comment} onChange={(event) => setComment(event.target.value)} disabled={loading} maxLength={MAX_COMMENT_LENGTH} aria-describedby={`edit-comment-hint edit-comment-count${attempted && errors.comment ? " edit-comment-error" : ""}`} aria-invalid={attempted && Boolean(errors.comment) || undefined} />
         <p id="edit-comment-hint" className="field-hint">Não escreva nome, telefone, documento ou outros dados pessoais.</p>
         <p id="edit-comment-count" className="field-hint">{comment.length} de {MAX_COMMENT_LENGTH} caracteres</p>
         {attempted && errors.comment ? <p id="edit-comment-error" className="field-error" role="alert">{errors.comment}</p> : null}
