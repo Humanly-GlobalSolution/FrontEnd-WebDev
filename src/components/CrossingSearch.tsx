@@ -6,13 +6,13 @@ import { TextField } from "@/components/TextField";
 import { useCruzamentos } from "@/hooks/useCruzamentos";
 
 export function CrossingSearch() {
-  const { crossings, query, setQuery, loading, error, retry } = useCruzamentos();
+  const { crossings, query, setQuery, loading, error, source, retry } = useCruzamentos();
 
   return (
     <section className="site-width crossing-search" aria-labelledby="search-title">
       <TextField label="Onde fica o farol?" type="search" placeholder="Rua ou código do poste" hint="Ex.: Paulista ou C01. A busca não usa sua localização." value={query} onChange={(event) => setQuery(event.target.value)} aria-controls="crossing-results" />
-      <h2 id="search-title">{query.trim() ? "Resultado da busca" : "Cruzamentos de exemplo"}</h2>
-      <p className="demo-notice">Demonstração: códigos, larguras e tempos simulados. Não são dados ao vivo da CET.</p>
+      <h2 id="search-title">{query.trim() ? "Resultado da busca" : source === "demo" ? "Cruzamentos de exemplo" : "Cruzamentos"}</h2>
+      {source === "demo" ? <p className="demo-notice">Demonstração: códigos, larguras e tempos simulados. Não são dados ao vivo da CET.</p> : source === "orion" ? <p className="demo-notice">Dados consultados no FIWARE Orion do projeto. Não representam autorização para atravessar.</p> : null}
       <p className="search-feedback" role="status">
         {loading ? "Carregando cruzamentos…" : error ? "Não foi possível carregar a lista." : `${crossings.length} ${crossings.length === 1 ? "cruzamento encontrado" : "cruzamentos encontrados"}.`}
       </p>

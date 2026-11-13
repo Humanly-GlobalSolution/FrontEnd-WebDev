@@ -5,3 +5,6 @@ export type Crossing = {
   width: number;
   currentSeconds: number;
 };
+
+export type CrossingsSource = "demo" | "orion";
+export type CrossingsResponse = { source: CrossingsSource; crossings: Crossing[] };

@@ -1,13 +1,9 @@
-import { demoCrossings } from "@/data/demoCrossings";
-import type { Crossing } from "@/types/crossing";
+import type { CrossingsResponse } from "@/types/crossing";
 
-// Fonte provisória explícita. A integração com Orion substituirá este acesso.
-export async function listCrossings(signal?: AbortSignal): Promise<Crossing[]> {
-  signal?.throwIfAborted();
-  return demoCrossings.map((crossing) => ({ ...crossing }));
-}
-
-export async function findCrossing(code: string): Promise<Crossing | undefined> {
-  const crossings = await listCrossings();
-  return crossings.find((crossing) => crossing.code.toUpperCase() === code.toUpperCase());
+export async function listCrossings(signal?: AbortSignal): Promise<CrossingsResponse> {
+  const response = await fetch("/api/cruzamentos", { signal, cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível consultar os cruzamentos.");
+  if (!Array.isArray(data.crossings) || !["demo", "orion"].includes(data.source)) throw new Error("A consulta retornou uma resposta inválida.");
+  return data as CrossingsResponse;
 }

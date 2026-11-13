@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { calculateCrossingSeconds, filterCrossings } from "@/lib/crossings";
 import { listCrossings } from "@/services/crossings";
-import type { Crossing } from "@/types/crossing";
+import type { Crossing, CrossingsSource } from "@/types/crossing";
 
 export function useCruzamentos() {
   const [crossings, setCrossings] = useState<Crossing[]>([]);
@@ -11,6 +11,7 @@ export function useCruzamentos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [source, setSource] = useState<CrossingsSource | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -20,9 +21,12 @@ export function useCruzamentos() {
       setError(null);
       try {
         const result = await listCrossings(controller.signal);
-        if (!controller.signal.aborted) setCrossings(result);
-      } catch {
-        if (!controller.signal.aborted) setError("Não foi possível carregar os cruzamentos. Tente novamente.");
+        if (!controller.signal.aborted) {
+          setCrossings(result.crossings);
+          setSource(result.source);
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "Não foi possível carregar os cruzamentos. Tente novamente.");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -41,6 +45,7 @@ export function useCruzamentos() {
     setQuery,
     loading,
     error,
+    source,
     retry: () => setAttempt((current) => current + 1),
   };
 }

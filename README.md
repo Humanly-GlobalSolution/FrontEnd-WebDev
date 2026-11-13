@@ -23,13 +23,17 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 7 de 15: formulário de revisão por cruzamento, com quatro motivos, comentário opcional de até 500 caracteres, validação e conferência das informações. No detalhe, o link “Pedir revisão do tempo” abre o formulário. A tela de conferência permite voltar e alterar os dados sem perder o preenchimento enquanto a página estiver aberta.
+Etapa 8 de 15: integração NGSI-v2 e CRUD administrativo completo de cruzamentos, testados contra o Orion 4.5.0 local em `http://localhost:1026`. Inclui configuração por ambiente, validação, token administrativo, criação, listagem, consulta por código, atualização parcial e exclusão persistidas no Orion. Os contêineres existentes não foram reinstalados nem recriados.
 
-O detalhe possui comparação interativa entre “Hoje” e “Com o Farol Amigo”, diagrama de posições na faixa, linha de tempo e explicação textual. A página inicial tem cinco cruzamentos simulados e busca por rua ou código. Os serviços ainda usam uma fonte de demonstração explícita.
+Consulte [o guia do Orion local](docs/orion-local.md) para comandos, atributos provisórios, rotas HTTP, testes e preparação da migração futura.
 
-O CRUD ainda será implementado. A página informa que o envio de pedidos não está disponível. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
+O formulário de revisão possui quatro motivos, comentário opcional de até 500 caracteres, validação e conferência das informações. No detalhe, o link “Pedir revisão do tempo” abre o formulário. A tela de conferência permite voltar e alterar os dados sem perder o preenchimento enquanto a página estiver aberta.
 
-O formulário ainda não grava pedidos nem gera protocolos. O botão de envio permanece desabilitado na conferência até a integração com o Orion. Os dados digitados ficam na memória da página e são descartados ao sair ou recarregar. Para experimentar, abra `/cruzamentos/C01/revisao`.
+O detalhe possui comparação interativa entre “Hoje” e “Com o Farol Amigo”, diagrama de posições na faixa, linha de tempo e explicação textual. A página inicial tem busca por rua ou código. No modo `demo`, há cinco cruzamentos simulados; no modo `orion`, a lista é consultada no serviço configurado.
+
+O CRUD de **pedidos de revisão** ainda será implementado nas próximas etapas. O CRUD administrativo de **cruzamentos** já funciona no backend. A página informa que o envio de pedidos não está disponível. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
+
+O formulário ainda não grava pedidos nem gera protocolos. O botão de envio permanece desabilitado na conferência até a integração dos pedidos com o Orion. Os dados digitados ficam na memória da página e são descartados ao sair ou recarregar. Para experimentar `/cruzamentos/C01/revisao`, cadastre primeiro C01 conforme o guia ou ative explicitamente o modo demo.
 
 O tempo de referência é `Math.ceil(largura / 0.75)`: o arredondamento para cima evita apresentar um tempo inferior ao calculado. Por exemplo, 30 m resultam em 40 s e 16 m em 22 s. Os números são uma referência do modelo acadêmico e não uma indicação de segurança para atravessar uma via real.
 
@@ -42,6 +46,7 @@ Na comparação, o tempo proposto é o maior entre o tempo atual e o tempo de re
 
 ```bash
 npm ci
+npm run setup:local
 npm run dev
 ```
 
@@ -64,7 +69,39 @@ npm start
 
 `npm start` serve o build de produção e exige que `npm run build` tenha concluído. O arquivo `package-lock.json` deve ser versionado para reproduzir a instalação. Não inclua `node_modules` nem `.next` no repositório ou ZIP.
 
-O projeto ainda não exige variáveis de ambiente. A configuração do Orion será adicionada na etapa de integração, somente no servidor.
+## Configuração do FIWARE Orion
+
+Execute `npm run setup:local` para criar `.env.local` a partir do exemplo, com endereço local e token aleatório. O comando preserva arquivos existentes. O arquivo local é ignorado pelo Git. Reinicie `npm run dev` após alterar a configuração. O Orion existente já está funcionando; não execute o Compose de referência para recriá-lo.
+
+| Variável | Uso |
+| --- | --- |
+| `CROSSINGS_SOURCE` | `demo` para exemplos; `orion` para consulta externa. Sem configuração, o padrão é `demo`. |
+| `ORION_BASE_URL` | Raiz do Orion, como `http://localhost:1026`, sem `/v2/entities`. Obrigatória no modo `orion`. |
+| `ORION_FIWARE_SERVICE` | Cabeçalho de serviço, se o ambiente do grupo utilizar. |
+| `ORION_FIWARE_SERVICEPATH` | Caminho de serviço, se utilizado pelo grupo. |
+| `ORION_AUTH_TOKEN` | Token Bearer, somente se o acesso do grupo exigir esse mecanismo. |
+| `ADMIN_API_TOKEN` | Token aleatório de no mínimo 32 caracteres para as rotas `/api/admin/cruzamentos`. Nunca vai ao navegador. |
+| `ORION_CROSSING_TYPE` | Tipo da entidade; padrão `Cruzamento`. |
+| `ORION_CODE_ATTRIBUTE` | Nome do atributo de código; padrão provisório `codigo`. |
+| `ORION_ADDRESS_ATTRIBUTE` | Nome do atributo de endereço; padrão provisório `endereco`. |
+| `ORION_WIDTH_ATTRIBUTE` | Nome do atributo numérico de largura em metros; padrão provisório `largura`. |
+| `ORION_TIME_ATTRIBUTE` | Nome do atributo numérico de tempo em segundos; padrão provisório `tempoAtual`. |
+
+Os nomes devem corresponder aos dados publicados pelo Edge. Confirme-os com o Bruno antes de ativar a conexão do grupo. Não use prefixo `NEXT_PUBLIC_` para essas variáveis. Na Vercel, cadastre-as no ambiente do deploy; não envie `.env.local` no ZIP.
+
+O navegador consulta somente a API do Next.js. A API e as páginas de detalhe compartilham o serviço de servidor, protegido por `server-only`. O serviço chama `GET /v2/entities?type=Cruzamento&options=keyValues`, com paginação de 100 registros e ordenação por ID. O contrato aceita atributos simplificados ou objetos NGSI-v2 com `value`, exigindo código de até 40 caracteres alfanuméricos, hífen ou sublinhado, endereço não vazio, largura e tempo positivos. Códigos duplicados são rejeitados.
+
+As consultas não usam cache e têm timeout de 8 segundos por página. Falhas HTTP, conexão, formato ou configuração não acionam fallback para dados demo. Mensagens da API não expõem o corpo da resposta externa nem credenciais. A fonte Orion indica dados do projeto, sem afirmar vínculo com a CET ou sinalização em tempo real.
+
+### Teste de integração local
+
+```bash
+npm run build
+npm run test:orion:local
+node tests/orion.integration.mjs
+```
+
+`test:orion:local` testa o CRUD completo contra o Orion local real, verificando também a persistência diretamente nele. Cria e remove somente um cruzamento temporário próprio. O teste usa um Next em porta temporária e recusa Orion remoto. O segundo teste usa Orion simulado para conferir paginação e falhas. Os processos criados pelos testes são encerrados ao final.
 
 Na configuração inicial, lint, checagem de tipos e build concluíram com sucesso. A auditoria npm não apontou vulnerabilidades de produção, mas registrou 7 avisos moderados em dependências de desenvolvimento da cadeia `typescript-eslint`/`minimatch`, ainda presentes após `npm audit fix`.
 

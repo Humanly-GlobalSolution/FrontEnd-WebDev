@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReviewRequestForm } from "@/components/ReviewRequestForm";
-import { findCrossing } from "@/services/crossings";
+import { findCrossing } from "@/services/crossings.server";
 
 export default async function ReviewPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const crossing = await findCrossing(code);
+  const { crossing } = await findCrossing(code);
   if (!crossing) notFound();
 
   return (

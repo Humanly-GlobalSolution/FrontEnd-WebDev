@@ -1,4 +1,4 @@
-# Etapas de desenvolvimento
+#code Etapas de desenvolvimento
 
 ## Forma de trabalho
 
@@ -13,7 +13,7 @@ Implementar uma etapa por vez, verificar o resultado e parar para Eduardo revisa
 | 5 | Tipos, regras de tempo, dados de demonstração identificados e busca de cruzamentos | `feat: listar e buscar cruzamentos` |
 | 6 | Detalhe do cruzamento e comparação visual dos tempos de travessia | `feat: comparar tempos de travessia` |
 | 7 | Formulário de pedido, motivos, validação e progresso | `feat: criar formulario de revisao` |
-| 8 | Cliente Orion no servidor, configuração de ambiente e leitura real de cruzamentos | `feat: integrar consulta de cruzamentos ao Orion` |
+| 8 | Integração NGSI-v2, configuração local e CRUD administrativo de cruzamentos com testes reais no Orion | `feat: integrar CRUD de cruzamentos ao Orion local` |
 | 9 | Criação real de pedido, protocolo e confirmação, com hook de pedidos | `feat: registrar pedidos de revisao no Orion` |
 | 10 | Consulta por protocolo, detalhes e andamento do pedido | `feat: consultar andamento dos pedidos` |
 | 11 | Edição real de motivo e comentário | `feat: editar pedidos de revisao` |
@@ -56,6 +56,7 @@ As cores de referência são asfalto `#1F2328`, amarelo `#FFC21A`, verde `#12B76
 ## Contrato inicial de dados
 
 - `Cruzamento`: código, endereço, largura em metros e tempo atual em segundos. Somente leitura pelo cidadão.
+- Por solicitação posterior de Eduardo, o backend também permite CRUD administrativo de `Cruzamento` por rotas protegidas. A interface do cidadão preserva a consulta; o CRUD dos pedidos permanece nas etapas 9 a 12.
 - `PedidoRevisao`: protocolo, referência ao cruzamento, motivo, comentário opcional, status e data.
 - Criação: `POST /v2/entities`.
 - Consulta: `GET /v2/entities` ou `GET /v2/entities/{id}`.
@@ -66,7 +67,7 @@ Os nomes exatos dos atributos, IDs e eventuais cabeçalhos de serviço precisam 
 
 ## Dependências a resolver antes da integração final
 
-- Endereço do Orion disponibilizado pelo Bruno e eventual autenticação.
+- Endereço de produção do Orion para a futura Azure e sua autenticação; o ambiente local já foi conectado e testado em `http://localhost:1026`.
 - Contrato das entidades `Cruzamento` compartilhadas com o Edge.
 - Dados de cinco cruzamentos de exemplo, identificados como simulados.
 - Nomes completos e RMs dos integrantes para completar a documentação.
