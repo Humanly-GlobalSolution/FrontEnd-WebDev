@@ -74,6 +74,14 @@ export async function updateReviewRequest(protocol: string, value: unknown): Pro
   return findReviewRequest(existing.protocol);
 }
 
+export async function cancelReviewRequest(protocol: string) {
+  const existing = await findReviewRequest(protocol);
+  if (existing.status === "respondido") throw new OrionError("Este pedido já foi respondido e não pode mais ser cancelado.", 409);
+  const type = process.env.ORION_REQUEST_TYPE || "PedidoRevisao";
+  const id = `urn:ngsi-ld:${type}:${requestKeyFromProtocol(existing.protocol)}`;
+  await orionRequest(`v2/entities/${encodeURIComponent(id)}`, new URLSearchParams({ type }), { method: "DELETE" });
+}
+
 export async function createReviewRequest(value: unknown, requestKey: string | null) {
   if (getCrossingsSource() !== "orion") throw new OrionError("O envio exige a conexão com o Orion. O modo demonstração não grava pedidos.", 503);
   if (!requestKey || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestKey)) throw new OrionError("A chave do pedido é inválida. Recarregue a página e tente novamente.", 400);

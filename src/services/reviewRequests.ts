@@ -23,3 +23,10 @@ export async function fetchReviewRequest(protocol: string): Promise<ReviewReques
   if (typeof result.request?.protocol !== "string" || !["enviado", "em_analise", "respondido"].includes(result.request.status)) throw new Error("O pedido retornou uma resposta inválida.");
   return result.request as ReviewRequestDetails;
 }
+
+export async function deleteReviewRequest(protocol: string): Promise<void> {
+  const response = await fetch(`/api/pedidos/${encodeURIComponent(protocol)}`, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } });
+  if (response.status === 204) return;
+  const result = await response.json();
+  throw new Error(typeof result.error === "string" ? result.error : "Não foi possível confirmar o cancelamento. Consulte o pedido antes de tentar novamente.");
+}

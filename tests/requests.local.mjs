@@ -27,6 +27,7 @@ const type = process.env.ORION_REQUEST_TYPE || "PedidoRevisao";
 const requestId = `urn:ngsi-ld:${type}:${key}`;
 const rawUrl = new URL(`v2/entities/${encodeURIComponent(requestId)}?type=${encodeURIComponent(type)}`, `${brokerBase.href.replace(/\/$/, "")}/`);
 let crossingCreated = false;
+const cancellationRecords = [];
 const post = (body, requestKey = key, extraHeaders = {}) => fetch(`${base}/api/pedidos`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": requestKey, ...extraHeaders }, body: JSON.stringify(body) });
 try {
   let ready = false;
@@ -133,6 +134,33 @@ try {
   assert.equal(stillAnswered.reason, "falta_som");
   assert.equal(stillAnswered.comment, "");
   assert.equal(stillAnswered.response, answered.response);
+  assert.equal((await fetch(lookupUrl, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } })).status, 409);
+  assert.equal((await fetch(lookupUrl)).status, 200, "Pedido respondido não deve ser excluído.");
+  assert.equal((await fetch(`${base}/api/pedidos/INVALIDO`, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } })).status, 400);
+  for (const status of ["enviado", "em_analise"]) {
+    const cancellationKey = randomUUID();
+    const cancellationId = `urn:ngsi-ld:${type}:${cancellationKey}`;
+    const directCancellationUrl = new URL(`v2/entities/${encodeURIComponent(cancellationId)}?type=${encodeURIComponent(type)}`, `${brokerBase.href.replace(/\/$/, "")}/`);
+    cancellationRecords.push(directCancellationUrl);
+    const another = await post(draft, cancellationKey);
+    assert.equal(another.status, 201);
+    const anotherProtocol = (await another.json()).request.protocol;
+    const cancelUrl = `${base}/api/pedidos/${anotherProtocol}`;
+    if (status === "em_analise") {
+      const statusChange = await fetch(`${directCancellationUrl.origin}${directCancellationUrl.pathname}/attrs${directCancellationUrl.search}`, { method: "PATCH", headers: { ...brokerHeaders, "Content-Type": "application/json" }, body: JSON.stringify({ status: { type: "Text", value: status } }) });
+      assert.equal(statusChange.status, 204);
+    }
+    assert.equal((await fetch(cancelUrl, { method: "DELETE" })).status, 400);
+    assert.equal((await fetch(cancelUrl)).status, 200, "Sem confirmação o pedido deve continuar existindo.");
+    assert.equal((await fetch(cancelUrl, { method: "DELETE", headers: { "X-Confirm-Cancel": "true", Origin: "https://outro.example" } })).status, 403);
+    const canceled = await fetch(cancelUrl, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } });
+    assert.equal(canceled.status, 204);
+    assert.equal(await canceled.text(), "");
+    assert.equal((await fetch(cancelUrl)).status, 404);
+    assert.equal((await fetch(directCancellationUrl, { headers: brokerHeaders })).status, 404);
+    assert.equal((await fetch(cancelUrl, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } })).status, 404);
+    assert.equal((await fetch(lookupUrl)).status, 200, "Excluir um pedido não deve excluir outro.");
+  }
   await changeStatus({ status: { type: "Text", value: "invalido" } });
   assert.equal((await fetch(lookupUrl)).status, 502);
   const lookupPage = await fetch(`${base}/pedidos?protocolo=${result.request.protocol}`);
@@ -142,8 +170,12 @@ try {
   assert.ok(lookupHtml.includes("noindex"));
   const reviewPage = await fetch(`${base}/cruzamentos/${code}/revisao`);
   assert.equal(reviewPage.status, 200);
-  console.log("OK: criação, consulta e edição reais; persistência, protocolo e datas preservados; validações; três status; bloqueio de edição após resposta.");
+  console.log("OK: CRUD real dos pedidos; confirmação obrigatória; exclusão de enviados/em análise; bloqueio de respondidos; protocolos e demais registros preservados.");
 } finally {
+  for (const cleanupUrl of cancellationRecords) {
+    const cleanup = await fetch(cleanupUrl, { method: "DELETE", headers: brokerHeaders }).catch(() => null);
+    if (cleanup && ![204, 404].includes(cleanup.status)) console.error("Verifique a limpeza de um pedido temporário de cancelamento.");
+  }
   const cleanup = await fetch(rawUrl, { method: "DELETE", headers: brokerHeaders }).catch(() => null);
   if (cleanup && ![204, 404].includes(cleanup.status)) console.error(`Verifique a limpeza da entidade ${requestId}.`);
   if (crossingCreated) {

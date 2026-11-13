@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { editReviewRequest, fetchReviewRequest, sendReviewRequest } from "@/services/reviewRequests";
+import { deleteReviewRequest, editReviewRequest, fetchReviewRequest, sendReviewRequest } from "@/services/reviewRequests";
 import type { CreatedReviewRequest, ReviewRequestDetails, ReviewRequestDraft, ReviewRequestEdit } from "@/types/reviewRequest";
 
 export function usePedido() {
@@ -73,5 +73,23 @@ export function usePedido() {
     }
   }
 
-  return { create, resetDraft, lookup, update, clearError: () => setError(null), loading, error, createdRequest, foundRequest };
+  async function cancel(protocol: string) {
+    if (pending.current) return false;
+    pending.current = true;
+    setLoading(true);
+    setError(null);
+    try {
+      await deleteReviewRequest(protocol);
+      setFoundRequest(null);
+      return true;
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Não foi possível cancelar. Tente novamente.");
+      return false;
+    } finally {
+      pending.current = false;
+      setLoading(false);
+    }
+  }
+
+  return { create, resetDraft, lookup, update, cancel, clearError: () => setError(null), loading, error, createdRequest, foundRequest };
 }

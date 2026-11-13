@@ -6,7 +6,7 @@ O Orion 4.5.0 já está rodando em `http://localhost:1026`, com MongoDB 4.4 conf
 
 O arquivo `docker-compose.yml` é apenas uma referência opcional para um ambiente novo. Não execute `docker compose up` nesta pasta para conectar ao ambiente já existente, pois isso tentaria criar outra instância na mesma porta. Também não execute `docker compose down -v`: isso removeria os volumes do projeto Compose correspondente.
 
-O site do cidadão continua somente consultando cruzamentos. O CRUD de cruzamentos está em rotas administrativas do backend, sem mudanças no design ou exposição do token no navegador. Criação, consulta e edição de pedidos pelo protocolo já funcionam; o cancelamento entra na próxima etapa.
+O site do cidadão continua somente consultando cruzamentos. O CRUD de cruzamentos está em rotas administrativas do backend, sem mudanças no design ou exposição do token no navegador. Criação, consulta, edição e cancelamento de pedidos pelo protocolo já funcionam. O cancelamento exige confirmação e exclui a entidade no Orion.
 
 ## Iniciar o site com o Orion existente
 
