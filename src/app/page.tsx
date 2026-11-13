@@ -1,3 +1,5 @@
+import { CrossingSearch } from "@/components/CrossingSearch";
+
 export default function Home() {
   return (
     <main id="conteudo" tabIndex={-1}>
@@ -12,11 +14,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section className="site-width development-notice" aria-labelledby="development-title">
-        <h2 id="development-title">Estamos preparando o site para você</h2>
-        <p>Em breve, você poderá consultar os tempos de travessia e criar, acompanhar, editar ou cancelar um pedido de revisão.</p>
-        <p>O envio de pedidos ainda não está disponível neste protótipo.</p>
-      </section>
+      <CrossingSearch />
     </main>
   );
 }

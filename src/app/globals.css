@@ -82,6 +82,24 @@ h2 { max-width: 30ch; font-size: 1.65rem; font-weight: 700; line-height: 1.25; t
 .preview-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .preview-fields { display: grid; gap: 1.5rem; max-width: 36rem; }
 .preview-feedback { min-height: 1.6em; margin-top: 1rem; color: var(--color-muted); }
+.crossing-search { padding-block: 2.5rem 4rem; }
+.crossing-search > .field { max-width: 36rem; margin-bottom: 2rem; }
+.crossing-search h2 { margin-bottom: 0.75rem; }
+.demo-notice { max-width: 65ch; color: var(--color-muted); font-size: 1rem; }
+.search-feedback { margin-block: 0.75rem 1.25rem; color: var(--color-muted); }
+.crossing-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 27rem), 1fr)); gap: 1rem; padding: 0; margin: 0; list-style: none; }
+.crossing-list .crossing-card { height: 100%; max-width: none; }
+.empty-results, .search-error { padding-block: 1rem; }
+.empty-results h3 { font-size: 1.25rem; font-weight: 700; }
+.empty-results p, .search-error p { margin-bottom: 1rem; }
+.unavailable-notice { max-width: 65ch; margin-top: 2rem; color: var(--color-muted); }
+.crossing-detail { padding-block: 2.5rem 4rem; }
+.back-link { display: inline-flex; align-items: center; min-height: 2.75rem; margin-bottom: 1.5rem; text-decoration: underline; text-underline-offset: 0.25em; font-weight: 700; }
+.crossing-detail h1 { max-width: 28ch; margin-block: 1.5rem 1rem; font-size: clamp(2rem, 4vw, 3rem); overflow-wrap: anywhere; }
+.crossing-code { font-weight: 700; }
+.crossing-facts { display: grid; gap: 1.5rem; margin-top: 2rem; }
+.crossing-facts dt { color: var(--color-muted); }
+.crossing-facts dd { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 40rem) {
   .header-content { padding-block: 1.5rem 1rem; flex-wrap: wrap; }

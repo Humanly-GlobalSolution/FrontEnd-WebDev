@@ -23,9 +23,11 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 4 de 15: botão, campo de texto, selo de status e cartão de cruzamento reutilizáveis implementados. A fonte Atkinson Hyperlegible Next é servida localmente. O botão de letra maior alterna a escala de texto entre 100% e 125% durante a navegação; ao recarregar, retorna ao padrão.
+Etapa 5 de 15: página inicial com cinco cruzamentos simulados, busca por rua ou código e consulta dos dados de cada cruzamento. A pesquisa aceita maiúsculas, minúsculas, palavras sem acento e múltiplos termos. O hook `useCruzamentos` separa o carregamento e a busca da apresentação; os serviços ainda usam uma fonte de demonstração explícita.
 
-A busca, os detalhes dos cruzamentos e o CRUD ainda serão implementados. A página informa que o envio de pedidos não está disponível.
+A comparação visual e o CRUD ainda serão implementados. A página informa que o envio de pedidos não está disponível. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
+
+O tempo de referência é `Math.ceil(largura / 0.75)`: o arredondamento para cima evita apresentar um tempo inferior ao calculado. Por exemplo, 30 m resultam em 40 s e 16 m em 22 s. Os números são uma referência do modelo acadêmico e não uma indicação de segurança para atravessar uma via real.
 
 ## Pré-requisitos e execução
 
