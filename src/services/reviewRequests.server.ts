@@ -54,6 +54,26 @@ function parseDraft(value: unknown): ReviewRequestDraft {
   return { crossingCode: data.crossingCode.toUpperCase(), reason: data.reason as ReviewReason, comment: data.comment.trim() };
 }
 
+export async function updateReviewRequest(protocol: string, value: unknown): Promise<ReviewRequestDetails> {
+  const existing = await findReviewRequest(protocol);
+  if (existing.status === "respondido") throw new OrionError("Este pedido já foi respondido e não pode mais ser editado.", 409);
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new OrionError("Informe o motivo ou o comentário para editar.", 400);
+  const fields = value as Record<string, unknown>;
+  if (!Object.keys(fields).length || Object.keys(fields).some((key) => !["reason", "comment"].includes(key))) throw new OrionError("Somente motivo e comentário podem ser editados.", 400);
+  const reason = fields.reason === undefined ? existing.reason : fields.reason;
+  const comment = fields.comment === undefined ? existing.comment : fields.comment;
+  if (typeof reason !== "string" || typeof comment !== "string") throw new OrionError("O motivo e o comentário devem ser textos.", 400);
+  const errors = validateReviewDraft(reason, comment);
+  if (errors.reason || errors.comment || comment.length > 500) throw new OrionError(errors.reason || errors.comment || "O comentário deve ter até 500 caracteres.", 400);
+  const type = process.env.ORION_REQUEST_TYPE || "PedidoRevisao";
+  const id = `urn:ngsi-ld:${type}:${requestKeyFromProtocol(existing.protocol)}`;
+  await orionRequest(`v2/entities/${encodeURIComponent(id)}/attrs`, new URLSearchParams({ type }), { method: "PATCH", body: {
+    motivo: { type: "Text", value: reason },
+    comentario: { type: "Text", value: comment.trim() },
+  } });
+  return findReviewRequest(existing.protocol);
+}
+
 export async function createReviewRequest(value: unknown, requestKey: string | null) {
   if (getCrossingsSource() !== "orion") throw new OrionError("O envio exige a conexão com o Orion. O modo demonstração não grava pedidos.", 503);
   if (!requestKey || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestKey)) throw new OrionError("A chave do pedido é inválida. Recarregue a página e tente novamente.", 400);

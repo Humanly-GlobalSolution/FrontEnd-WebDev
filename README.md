@@ -23,7 +23,7 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 10 de 15: consulta por protocolo na página `/pedidos`, com detalhes, andamento, atualização manual e resposta informada pelo Orion. O hook `usePedido` gerencia criação e consulta. A criação, a consulta dos pedidos e o CRUD administrativo de cruzamentos foram testados contra o Orion 4.5.0 local em `http://localhost:1026`.
+Etapa 11 de 15: edição de motivo e comentário em `/pedidos`, com preenchimento inicial, opção de voltar sem salvar, validação, confirmação e persistência no Orion. O hook `usePedido` gerencia criação, consulta e edição. Os testes reais foram executados no Orion 4.5.0 local em `http://localhost:1026`.
 
 Consulte [o guia do Orion local](docs/orion-local.md) para comandos, atributos provisórios, rotas HTTP, testes e preparação da migração futura.
 
@@ -31,7 +31,7 @@ O formulário de revisão possui quatro motivos, comentário opcional de até 50
 
 O detalhe possui comparação interativa entre “Hoje” e “Com o Farol Amigo”, diagrama de posições na faixa, linha de tempo e explicação textual. A página inicial tem busca por rua ou código. No modo `demo`, há cinco cruzamentos simulados; no modo `orion`, a lista é consultada no serviço configurado.
 
-O CRUD administrativo de **cruzamentos** funciona no backend. Para **pedidos de revisão**, criação e consulta já funcionam; edição e cancelamento serão implementados nas próximas etapas. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
+O CRUD administrativo de **cruzamentos** funciona no backend. Para **pedidos de revisão**, criação, consulta e edição já funcionam; o cancelamento entra na próxima etapa. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
 
 No modo Orion, o formulário grava o pedido após a conferência e mostra o protocolo somente após a resposta de sucesso. Em caso de erro, mantém o preenchimento para nova tentativa. A mesma chave de envio recupera o registro existente, evitando duplicação se a resposta anterior se perder. Ao voltar para alterar o rascunho, uma nova chave será usada. No modo demo, o envio permanece desabilitado.
 
@@ -48,6 +48,10 @@ O protocolo usa o formato `FA-AAMM-<32 caracteres hexadecimais>`, preservando a 
 `GET /api/pedidos/{protocolo}` consulta diretamente a entidade identificada pelo UUID do protocolo, sem listar pedidos de outras pessoas. O protocolo armazenado deve coincidir com o informado; a busca aceita letras minúsculas e espaços nas extremidades. Formato inválido retorna 400; pedido inexistente retorna 404; status ou dados inesperados do Orion retornam erro, sem inventar andamento.
 
 O contrato provisório de status é `enviado`, `em_analise` ou `respondido`. Os atributos opcionais `resposta` (Text), `dataAnalise` e `dataResposta` (DateTime) são exibidos quando presentes. O site não altera esses status automaticamente. Datas são apresentadas no fuso de São Paulo e nenhuma data de transição é estimada.
+
+`PATCH /api/pedidos/{protocolo}` aceita somente `reason` e/ou `comment`. Pedidos enviados ou em análise podem ser editados; pedidos já respondidos são rejeitados com 409. O servidor consulta o status antes da operação e altera somente os atributos `motivo` e `comentario` via NGSI-v2. Protocolo, cruzamento, data de criação, status e resposta não são modificados por essa operação. Não há transação distribuída entre a consulta de status e o PATCH: a integração definitiva com o operador deverá considerar alterações simultâneas.
+
+Na interface, consulte o protocolo e escolha “Editar pedido”. O formulário mantém os dados em caso de erro e permite voltar sem gravar. A consulta de outro pedido fica desabilitada durante a edição para evitar perder o rascunho. Após salvar, os detalhes são carregados novamente do Orion e a confirmação é exibida. O comentário é opcional e pode ser apagado; seu limite continua sendo 500 caracteres.
 
 A página de consulta usa `noindex` e política de referência `no-referrer`; a resposta da API usa `Cache-Control: no-store`. Como o protocolo pode aparecer na URL de acompanhamento, evite compartilhá-la ou publicar logs com esses endereços. Não há endpoint público para listar todos os pedidos.
 
@@ -118,7 +122,7 @@ npm run test:pedidos:local
 node tests/orion.integration.mjs
 ```
 
-`test:orion:local` testa o CRUD de cruzamentos. `test:pedidos:local` confere criação e consulta, campos persistidos, repetição sem duplicação, três status, datas opcionais, resposta e rejeição de dados inválidos. Ambos usam o Orion local real e um Next em porta temporária, recusam Orion remoto e removem somente os registros temporários que criaram. O teste `orion.integration.mjs` usa Orion simulado para conferir paginação e falhas. Os processos criados pelos testes são encerrados ao final.
+`test:orion:local` testa o CRUD de cruzamentos. `test:pedidos:local` confere criação, consulta e edição, campos persistidos, repetição sem duplicação, três status, datas opcionais, resposta, validações, preservação dos demais campos e bloqueio de edição após resposta. Ambos usam o Orion local real e um Next em porta temporária, recusam Orion remoto e removem somente os registros temporários que criaram. O teste `orion.integration.mjs` usa Orion simulado para conferir paginação e falhas. Os processos criados pelos testes são encerrados ao final.
 
 Na configuração inicial, lint, checagem de tipos e build concluíram com sucesso. A auditoria npm não apontou vulnerabilidades de produção, mas registrou 7 avisos moderados em dependências de desenvolvimento da cadeia `typescript-eslint`/`minimatch`, ainda presentes após `npm audit fix`.
 

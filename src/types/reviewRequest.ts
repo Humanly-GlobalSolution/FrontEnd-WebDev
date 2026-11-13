@@ -1,6 +1,7 @@
 import type { ReviewReason } from "@/lib/reviewRequests";
 
 export type ReviewRequestDraft = { crossingCode: string; reason: ReviewReason; comment: string };
+export type ReviewRequestEdit = Pick<ReviewRequestDraft, "reason" | "comment">;
 export type CreatedReviewRequest = {
   protocol: string;
   crossingCode: string;

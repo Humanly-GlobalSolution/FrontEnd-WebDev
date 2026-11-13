@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { fetchReviewRequest, sendReviewRequest } from "@/services/reviewRequests";
-import type { CreatedReviewRequest, ReviewRequestDetails, ReviewRequestDraft } from "@/types/reviewRequest";
+import { editReviewRequest, fetchReviewRequest, sendReviewRequest } from "@/services/reviewRequests";
+import type { CreatedReviewRequest, ReviewRequestDetails, ReviewRequestDraft, ReviewRequestEdit } from "@/types/reviewRequest";
 
 export function usePedido() {
   const [loading, setLoading] = useState(false);
@@ -55,5 +55,23 @@ export function usePedido() {
     }
   }, []);
 
-  return { create, resetDraft, lookup, loading, error, createdRequest, foundRequest };
+  async function update(protocol: string, changes: ReviewRequestEdit) {
+    if (pending.current) return null;
+    pending.current = true;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await editReviewRequest(protocol, changes);
+      setFoundRequest(result);
+      return result;
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Não foi possível salvar as alterações. Tente novamente.");
+      return null;
+    } finally {
+      pending.current = false;
+      setLoading(false);
+    }
+  }
+
+  return { create, resetDraft, lookup, update, clearError: () => setError(null), loading, error, createdRequest, foundRequest };
 }
