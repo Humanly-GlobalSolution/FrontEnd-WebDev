@@ -23,7 +23,9 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 2 de 15: base do Next.js com TypeScript e Tailwind configurada. A página inicial é provisória; as telas do protótipo e o acesso ao Orion serão implementados nas próximas etapas.
+Etapa 3 de 15: identidade visual, cabeçalho, marca vetorial e estrutura responsiva inicial implementados conforme a referência do Figma. A fonte Atkinson Hyperlegible Next é servida localmente. O botão de letra maior alterna a escala de texto entre 100% e 125% durante a navegação; ao recarregar, retorna ao padrão.
+
+A busca, os detalhes dos cruzamentos e o CRUD ainda serão implementados. A página informa que o envio de pedidos não está disponível.
 
 ## Pré-requisitos e execução
 

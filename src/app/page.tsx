@@ -1,15 +1,22 @@
 export default function Home() {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16 text-slate-900">
-      <h1 className="text-4xl font-bold">Farol Amigo</h1>
-      <p className="mt-6 text-lg leading-relaxed">
-        Estamos preparando o site para você consultar os tempos de travessia e
-        pedir a revisão de um farol.
-      </p>
-      <p className="mt-4 text-base leading-relaxed">
-        Projeto acadêmico em desenvolvimento. O envio de pedidos ainda não está
-        disponível.
-      </p>
+    <main id="conteudo" tabIndex={-1}>
+      <section className="intro" aria-labelledby="intro-title">
+        <div className="site-width intro-content">
+          <h1 id="intro-title">Achou o tempo<br className="desktop-break" /> do farol curto?</h1>
+          <p>Escolha o cruzamento e avise a CET. Você não precisa dizer seu nome.</p>
+          <div className="crosswalk" aria-hidden="true">
+            {Array.from({ length: 13 }, (_, index) => (
+              <span key={index} className={index > 8 ? "extra-time" : undefined} />
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="site-width development-notice" aria-labelledby="development-title">
+        <h2 id="development-title">Estamos preparando o site para você</h2>
+        <p>Em breve, você poderá consultar os tempos de travessia e criar, acompanhar, editar ou cancelar um pedido de revisão.</p>
+        <p>O envio de pedidos ainda não está disponível neste protótipo.</p>
+      </section>
     </main>
   );
 }

@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import "@fontsource/atkinson-hyperlegible-next/latin-400.css";
+import "@fontsource/atkinson-hyperlegible-next/latin-700.css";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,7 +13,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
+        <SiteHeader />
+        {children}
+        <footer className="site-width site-footer">
+          <p>Farol Amigo · Humanly · CitizenTech</p>
+          <p>Protótipo acadêmico. Sem vínculo de atendimento com a CET.</p>
+        </footer>
+      </body>
     </html>
   );
 }
