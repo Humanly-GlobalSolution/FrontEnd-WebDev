@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "description": "Site do cidadão do Farol Amigo — projeto CitizenTech da equipe Humanly.",
     "scripts": {
-        "dev": "next dev",
+        "dev": "next dev --webpack",
         "build": "next build",
         "start": "next start",
         "lint": "eslint .",

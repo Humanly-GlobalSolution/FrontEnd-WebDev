@@ -106,7 +106,8 @@ export async function createReviewRequest(value: unknown, requestKey: string | n
       status: { type: "Text", value: created.status },
       data: { type: "DateTime", value: created.createdAt },
     } });
-    return { request: created, replayed: false };
+    const persisted = await findReviewRequest(created.protocol);
+    return { request: { ...created, createdAt: persisted.createdAt }, replayed: false };
   } catch (error) {
     if (!(error instanceof OrionError) || error.status !== 409) throw error;
     const stored = await orionRequest(`v2/entities/${encodeURIComponent(id)}`, new URLSearchParams({ type, options: "keyValues" })) as Record<string, unknown>;
