@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { sendReviewRequest } from "@/services/reviewRequests";
-import type { CreatedReviewRequest, ReviewRequestDraft } from "@/types/reviewRequest";
+import { useCallback, useRef, useState } from "react";
+import { fetchReviewRequest, sendReviewRequest } from "@/services/reviewRequests";
+import type { CreatedReviewRequest, ReviewRequestDetails, ReviewRequestDraft } from "@/types/reviewRequest";
 
 export function usePedido() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdRequest, setCreatedRequest] = useState<CreatedReviewRequest | null>(null);
+  const [foundRequest, setFoundRequest] = useState<ReviewRequestDetails | null>(null);
   const pending = useRef(false);
   const key = useRef<string | null>(null);
 
@@ -35,5 +36,24 @@ export function usePedido() {
     setError(null);
   }
 
-  return { create, resetDraft, loading, error, createdRequest };
+  const lookup = useCallback(async (protocol: string) => {
+    if (pending.current) return null;
+    pending.current = true;
+    setLoading(true);
+    setError(null);
+    setFoundRequest(null);
+    try {
+      const result = await fetchReviewRequest(protocol);
+      setFoundRequest(result);
+      return result;
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Não foi possível consultar o pedido. Tente novamente.");
+      return null;
+    } finally {
+      pending.current = false;
+      setLoading(false);
+    }
+  }, []);
+
+  return { create, resetDraft, lookup, loading, error, createdRequest, foundRequest };
 }

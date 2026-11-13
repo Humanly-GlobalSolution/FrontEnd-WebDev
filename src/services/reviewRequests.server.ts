@@ -1,8 +1,48 @@
 import "server-only";
-import { validateReviewDraft, type ReviewReason } from "@/lib/reviewRequests";
+import { normalizeProtocol, requestKeyFromProtocol, validateReviewDraft, type ReviewReason } from "@/lib/reviewRequests";
 import { findCrossing, getCrossingsSource } from "@/services/crossings.server";
 import { OrionError, orionRequest } from "@/services/orion.server";
-import type { CreatedReviewRequest, ReviewRequestDraft } from "@/types/reviewRequest";
+import type { CreatedReviewRequest, ReviewRequestDetails, ReviewRequestDraft } from "@/types/reviewRequest";
+
+export async function findReviewRequest(protocol: string): Promise<ReviewRequestDetails> {
+  if (getCrossingsSource() !== "orion") throw new OrionError("A consulta de pedidos exige a conexão com o Orion.", 503);
+  const normalized = normalizeProtocol(protocol);
+  const key = requestKeyFromProtocol(normalized);
+  if (!key) throw new OrionError("Confira o protocolo completo, incluindo FA, os números e as letras.", 400);
+  const type = process.env.ORION_REQUEST_TYPE || "PedidoRevisao";
+  let entity: Record<string, unknown>;
+  try {
+    entity = await orionRequest(`v2/entities/${encodeURIComponent(`urn:ngsi-ld:${type}:${key}`)}`, new URLSearchParams({ type, options: "keyValues" })) as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof OrionError && error.status === 404) throw new OrionError("Não encontramos um pedido com esse protocolo. Confira o número e tente novamente.", 404);
+    throw error;
+  }
+  if (!entity || entity.protocolo !== normalized) throw new OrionError("Não encontramos um pedido com esse protocolo.", 404);
+  const status = entity.status;
+  if (!["enviado", "em_analise", "respondido"].includes(String(status))
+    || typeof entity.codigoCruzamento !== "string" || typeof entity.endereco !== "string"
+    || typeof entity.motivo !== "string" || typeof entity.comentario !== "string"
+    || validateReviewDraft(entity.motivo, entity.comentario).reason
+    || typeof entity.data !== "string" || Number.isNaN(Date.parse(entity.data))) throw new OrionError("O pedido retornou dados inválidos. Tente novamente mais tarde.");
+
+  function optionalText(key: string) {
+    const value = entity[key];
+    if (value === undefined || value === null || value === "") return undefined;
+    if (typeof value !== "string") throw new OrionError("O pedido retornou dados de andamento inválidos.");
+    return value;
+  }
+  function optionalDate(key: string) {
+    const value = optionalText(key);
+    if (value && Number.isNaN(Date.parse(value))) throw new OrionError("O pedido retornou uma data de andamento inválida.");
+    return value;
+  }
+  return {
+    protocol: normalized, crossingCode: entity.codigoCruzamento, address: entity.endereco,
+    reason: entity.motivo as ReviewReason, comment: entity.comentario,
+    status: status as ReviewRequestDetails["status"], createdAt: entity.data,
+    response: optionalText("resposta"), reviewedAt: optionalDate("dataAnalise"), answeredAt: optionalDate("dataResposta"),
+  };
+}
 
 function parseDraft(value: unknown): ReviewRequestDraft {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new OrionError("Informe os dados do pedido.", 400);

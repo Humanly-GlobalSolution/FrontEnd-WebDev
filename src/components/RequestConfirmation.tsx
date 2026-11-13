@@ -15,7 +15,8 @@ export function RequestConfirmation({ request, headingRef }: { request: CreatedR
         <p className="protocol-value">{request.protocol}</p>
         <p>Anote ou tire um print. Guarde este número para encontrar seu pedido sem informar dados pessoais.</p>
       </div>
-      <p className="field-hint">O acompanhamento pelo protocolo será disponibilizado na próxima etapa. Este projeto acadêmico não envia solicitações aos sistemas reais da CET.</p>
+      <Link href={`/pedidos?protocolo=${encodeURIComponent(request.protocol)}`} className="button button-primary request-action" referrerPolicy="no-referrer">Acompanhar pedido</Link>
+      <p className="field-hint">Este projeto acadêmico não envia solicitações aos sistemas reais da CET.</p>
       <Link href="/" className="button button-secondary request-action">Voltar ao início</Link>
     </section>
   );

@@ -4,6 +4,7 @@ import { Button } from "@/components/Button";
 import { CrossingCard } from "@/components/CrossingCard";
 import { TextField } from "@/components/TextField";
 import { useCruzamentos } from "@/hooks/useCruzamentos";
+import Link from "next/link";
 
 export function CrossingSearch() {
   const { crossings, query, setQuery, loading, error, source, retry } = useCruzamentos();
@@ -27,7 +28,7 @@ export function CrossingSearch() {
           </ul>
         )}
       </div>
-      <p className="unavailable-notice">Escolha um cruzamento para pedir a revisão. O acompanhamento pelo protocolo estará disponível em breve.</p>
+      <Link href="/pedidos" className="track-request-link">Já pediu revisão? Acompanhe pelo protocolo</Link>
     </section>
   );
 }
