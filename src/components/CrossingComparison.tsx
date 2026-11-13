@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/Button";
+import Link from "next/link";
 import { CrossingIllustration } from "@/components/CrossingIllustration";
 import { compareCrossing } from "@/lib/crossings";
 
@@ -13,7 +13,7 @@ function distanceDescription(distance: number, remaining: number) {
     : `chega a ${decimal.format(distance)} m; faltam ${decimal.format(remaining)} m.`;
 }
 
-export function CrossingComparison({ width, currentSeconds }: { width: number; currentSeconds: number }) {
+export function CrossingComparison({ code, width, currentSeconds }: { code: string; width: number; currentSeconds: number }) {
   const [extended, setExtended] = useState(false);
   const comparison = compareCrossing(width, currentSeconds, extended);
   const normalRatio = (currentSeconds / comparison.proposedSeconds) * 100;
@@ -54,8 +54,8 @@ export function CrossingComparison({ width, currentSeconds }: { width: number; c
           : "Pessoas diferentes caminham em ritmos diferentes. O Farol Amigo propõe tempo adequado com o Bilhete Único Sênior ou Especial e sensores para identificar quem ainda está atravessando."}</p>
       </aside>
       <p className="comparison-disclaimer">Simulação educativa, sem informação do sinal ao vivo. Ao atravessar, observe a sinalização da via. A velocidade de cada pessoa pode variar.</p>
-      <Button className="review-placeholder" disabled>Pedir revisão do tempo</Button>
-      <p className="field-hint">O formulário de revisão será disponibilizado na próxima etapa.</p>
+      <Link className="button button-primary review-placeholder" href={`/cruzamentos/${code}/revisao`}>Pedir revisão do tempo</Link>
+      <p className="field-hint">Você pode preencher e conferir o formulário. O envio ainda não está disponível.</p>
     </div>
   );
 }

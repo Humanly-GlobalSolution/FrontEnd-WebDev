@@ -136,6 +136,34 @@ h2 { max-width: 30ch; font-size: 1.65rem; font-weight: 700; line-height: 1.25; t
 .comparison-explanation p { margin-top: 0.5rem; }
 .comparison-disclaimer { margin-block: 1rem; color: var(--color-muted); font-size: 0.95rem; }
 .review-placeholder { width: 100%; margin-block: 0.5rem; }
+.review-page { padding-block: 2rem 4rem; }
+.request-form { max-width: 42rem; }
+.request-progress { margin-bottom: 1.5rem; }
+.request-progress p { margin-bottom: 0.5rem; color: var(--color-muted); font-weight: 700; }
+.request-progress progress { display: block; width: 100%; height: 0.6rem; overflow: hidden; border: 0; border-radius: 999px; appearance: none; background: #d0d5da; accent-color: var(--color-signal); }
+.request-progress progress::-webkit-progress-bar { background: #d0d5da; }
+.request-progress progress::-webkit-progress-value { background: var(--color-signal); }
+.request-progress progress::-moz-progress-bar { background: var(--color-signal); }
+.request-location { margin-bottom: 1.25rem; color: var(--color-muted); }
+.request-form h1 { max-width: 22ch; margin-bottom: 1.75rem; font-size: clamp(2rem, 4vw, 3rem); }
+.reason-group { padding: 0; margin: 0; border: 0; min-width: 0; }
+.reason-group legend { margin-bottom: 1rem; font-weight: 700; }
+.reason-options { display: grid; gap: 1rem; }
+.reason-option { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; min-height: 5rem; border: 2px solid transparent; border-radius: 1rem; background: white; cursor: pointer; }
+.reason-option:hover { border-color: #a3abb4; }
+.reason-selected { border-color: var(--color-asphalt); background: #fff3c4; }
+.reason-option input { flex: none; width: 1.4rem; height: 1.4rem; accent-color: var(--color-asphalt); }
+.reason-option span { overflow-wrap: anywhere; }
+.reason-group > .field-error { margin-top: 0.75rem; }
+.comment-field { margin-block: 1.75rem; }
+.comment-field textarea { resize: vertical; min-height: 7rem; }
+.request-action { width: 100%; }
+.request-review { display: grid; gap: 1.5rem; margin-block: 1.5rem; padding: 1.5rem; border-radius: 1rem; background: white; }
+.request-review dt { margin-bottom: 0.35rem; color: var(--color-muted); }
+.request-review dd { white-space: pre-wrap; overflow-wrap: anywhere; }
+.request-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+.request-actions .button { flex: 1 1 12rem; }
+.request-draft-notice { margin-top: 1.5rem; color: var(--color-muted); font-size: 0.95rem; }
 
 @media (max-width: 25rem) {
   .comparison-panel { padding: 1rem; }

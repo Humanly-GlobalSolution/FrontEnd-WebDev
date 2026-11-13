@@ -14,7 +14,7 @@ export default async function CrossingPage({ params }: { params: Promise<{ code:
       <p className="demo-notice">Demonstração com dados simulados. Sem conexão ao vivo com a CET.</p>
       <h1>{crossing.address}</h1>
       <p className="crossing-code">Poste {crossing.code}</p>
-      <CrossingComparison width={crossing.width} currentSeconds={crossing.currentSeconds} />
+      <CrossingComparison code={crossing.code} width={crossing.width} currentSeconds={crossing.currentSeconds} />
     </main>
   );
 }

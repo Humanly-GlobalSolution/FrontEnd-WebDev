@@ -23,9 +23,13 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 6 de 15: detalhe do cruzamento com comparação interativa entre “Hoje” e “Com o Farol Amigo”, diagrama de posições na faixa, linha de tempo e explicação textual equivalente. A página inicial possui cinco cruzamentos simulados e busca por rua ou código, aceitando diferenças de caixa, palavras sem acento e múltiplos termos. Os serviços ainda usam uma fonte de demonstração explícita.
+Etapa 7 de 15: formulário de revisão por cruzamento, com quatro motivos, comentário opcional de até 500 caracteres, validação e conferência das informações. No detalhe, o link “Pedir revisão do tempo” abre o formulário. A tela de conferência permite voltar e alterar os dados sem perder o preenchimento enquanto a página estiver aberta.
+
+O detalhe possui comparação interativa entre “Hoje” e “Com o Farol Amigo”, diagrama de posições na faixa, linha de tempo e explicação textual. A página inicial tem cinco cruzamentos simulados e busca por rua ou código. Os serviços ainda usam uma fonte de demonstração explícita.
 
 O CRUD ainda será implementado. A página informa que o envio de pedidos não está disponível. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
+
+O formulário ainda não grava pedidos nem gera protocolos. O botão de envio permanece desabilitado na conferência até a integração com o Orion. Os dados digitados ficam na memória da página e são descartados ao sair ou recarregar. Para experimentar, abra `/cruzamentos/C01/revisao`.
 
 O tempo de referência é `Math.ceil(largura / 0.75)`: o arredondamento para cima evita apresentar um tempo inferior ao calculado. Por exemplo, 30 m resultam em 40 s e 16 m em 22 s. Os números são uma referência do modelo acadêmico e não uma indicação de segurança para atravessar uma via real.
 
