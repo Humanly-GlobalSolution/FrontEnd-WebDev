@@ -10,7 +10,8 @@
         "typecheck": "next typegen && tsc --noEmit",
         "setup:local": "node scripts/setup-local.mjs",
         "test:orion:local": "node tests/orion.local.mjs",
-        "test:pedidos:local": "node tests/requests.local.mjs"
+        "test:pedidos:local": "node tests/requests.local.mjs",
+        "test:http": "node --test tests/httpClient.test.mjs"
     },
     "type": "module",
     "dependencies": {

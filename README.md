@@ -23,7 +23,7 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 12 de 15: cancelamento com confirmação e exclusão real no Orion. O hook `usePedido` gerencia criação, consulta, edição e cancelamento. O CRUD completo de pedidos foi testado no Orion 4.5.0 local em `http://localhost:1026`.
+Etapa 13 de 15: tratamento comum de falhas HTTP, respostas inválidas e limite de espera no navegador, validação dos dados recebidos e recuperação das consultas. O CRUD completo de pedidos continua validado no Orion 4.5.0 local em `http://localhost:1026`.
 
 Consulte [o guia do Orion local](docs/orion-local.md) para comandos, atributos provisórios, rotas HTTP, testes e preparação da migração futura.
 
@@ -117,16 +117,27 @@ O navegador consulta somente a API do Next.js. A API e as páginas de detalhe co
 
 As consultas não usam cache e têm timeout de 8 segundos por página. Falhas HTTP, conexão, formato ou configuração não acionam fallback para dados demo. Mensagens da API não expõem o corpo da resposta externa nem credenciais. A fonte Orion indica dados do projeto, sem afirmar vínculo com a CET ou sinalização em tempo real.
 
+### Falhas e recuperação
+
+As chamadas do navegador têm limite de 20 segundos, incluindo leitura do corpo da resposta. Falhas de rede, HTML no lugar de JSON e respostas incompletas geram mensagens em português com orientação para nova tentativa. Os serviços validam os campos antes da renderização, evitando usar dados inválidos nos cálculos ou no andamento. O timeout do servidor para Orion é de 8 segundos por chamada e retorna HTTP 504 tanto para cabeçalhos quanto para corpo demorados.
+
+Não há repetição automática de operações de escrita. Ao tentar reenviar o mesmo rascunho, a chave do formulário é mantida para recuperar o protocolo sem duplicação. Em falhas ou tempo limite de edição/cancelamento, consulte o protocolo para verificar o resultado, pois uma operação pode ter sido gravada antes da perda da resposta.
+
+A lista vazia distingue ausência de cadastros de uma pesquisa sem resultados. O botão de recuperação da página de erro de cruzamento usa a função `retry` da versão instalada do Next.js, refazendo a consulta ao servidor. Esses estados ainda devem passar pela revisão visual e de teclado.
+
 ### Teste de integração local
 
 ```bash
 npm run build
+npm run test:http
 npm run test:orion:local
 npm run test:pedidos:local
 node tests/orion.integration.mjs
 ```
 
 `test:orion:local` testa o CRUD de cruzamentos. `test:pedidos:local` confere o CRUD completo, validações, status, datas e resposta, preservação dos demais registros, confirmação obrigatória, bloqueio de respondidos e ausência real da entidade após cancelamento. Ambos usam o Orion local real e um Next em porta temporária, recusam Orion remoto e removem somente os registros temporários que criaram. O teste `orion.integration.mjs` usa Orion simulado para conferir paginação e falhas. Os processos criados pelos testes são encerrados ao final.
+
+`test:http` usa o executor nativo do Node.js 24 para verificar o tratamento HTTP do navegador com respostas simuladas: JSON, erro controlado, rede, resposta inválida, timeout na requisição e no corpo, cancelamento externo e exigência de HTTP 204 para confirmar exclusão. Não requer Docker. O teste de Orion simulado também verifica os dois tipos de timeout de 8 segundos.
 
 Na configuração inicial, lint, checagem de tipos e build concluíram com sucesso. A auditoria npm não apontou vulnerabilidades de produção, mas registrou 7 avisos moderados em dependências de desenvolvimento da cadeia `typescript-eslint`/`minimatch`, ainda presentes após `npm audit fix`.
 

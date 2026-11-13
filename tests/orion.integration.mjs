@@ -11,6 +11,8 @@ const broker = createServer((request, response) => {
   const url = new URL(request.url, "http://localhost");
   calls.push({ path: url.pathname, query: url.searchParams, headers: request.headers });
   response.setHeader("Content-Type", "application/json");
+  if (scenario === "slow_headers") return;
+  if (scenario === "slow_body") { response.write("["); return; }
   if (scenario === "unavailable") { response.writeHead(503); response.end('{"error":"private upstream detail"}'); return; }
   if (scenario === "malformed") { response.end("not json"); return; }
   if (scenario === "invalid") { response.end(JSON.stringify([{ ...entity(1), largura: 0 }])); return; }
@@ -85,7 +87,14 @@ try {
     assert.ok(!("crossings" in body), "Falha nunca deve retornar dados demo.");
     assert.ok(!JSON.stringify(body).includes("private upstream detail"));
   }
-  console.log("OK: consulta Orion local, contrato, headers, detalhe, 404, paginação, lista vazia e quatro falhas sem fallback.");
+  for (scenario of ["slow_headers", "slow_body"]) {
+    const timeout = await fetch(`${base}/api/cruzamentos`);
+    assert.equal(timeout.status, 504, scenario);
+    const body = await timeout.json();
+    assert.match(body.error, /demorou/);
+    assert.ok(!("crossings" in body));
+  }
+  console.log("OK: contrato, headers, detalhe, paginação, lista vazia, quatro falhas e timeout de cabeçalhos/corpo sem fallback.");
 } finally {
   child.kill();
   broker.closeAllConnections();

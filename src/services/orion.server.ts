@@ -27,18 +27,26 @@ export async function orionRequest(path: string, query: URLSearchParams = new UR
   if (process.env.ORION_AUTH_TOKEN) headers.set("Authorization", `Bearer ${process.env.ORION_AUTH_TOKEN}`);
 
   let response: Response;
+  const timeoutSignal = AbortSignal.timeout(8000);
   try {
-    response = await fetch(url, { method: init.method ?? "GET", body: init.body === undefined ? undefined : JSON.stringify(init.body), headers, cache: "no-store", signal: AbortSignal.timeout(8000), redirect: "error" });
+    response = await fetch(url, { method: init.method ?? "GET", body: init.body === undefined ? undefined : JSON.stringify(init.body), headers, cache: "no-store", signal: timeoutSignal, redirect: "error" });
   } catch {
+    if (timeoutSignal.aborted) throw new OrionError("O serviço de dados demorou para responder. Tente novamente em instantes.", 504);
     throw new OrionError("Não foi possível conectar ao Orion. Tente novamente em instantes.");
   }
   if (!response.ok) {
     if (response.status === 404) throw new OrionError("Registro não encontrado.", 404);
-    if (response.status === 409 || response.status === 422) throw new OrionError("Já existe um cruzamento com este identificador ou a operação conflita com os dados existentes.", 409);
+    if (response.status === 409 || response.status === 422) throw new OrionError("Já existe um registro com este identificador ou a operação conflita com os dados existentes.", 409);
+    if (response.status === 400) throw new OrionError("O serviço não aceitou os dados. Revise os textos informados e tente novamente.", 400);
     throw new OrionError("O Orion não conseguiu atender à operação. Verifique o serviço e suas credenciais.");
   }
   if (response.status === 204 || response.headers.get("content-length") === "0") return null;
-  const text = await response.text();
+  let text: string;
+  try { text = await response.text(); }
+  catch {
+    if (timeoutSignal.aborted) throw new OrionError("O serviço de dados demorou para concluir a resposta. Tente novamente em instantes.", 504);
+    throw new OrionError("A resposta do serviço de dados foi interrompida. Tente novamente.");
+  }
   if (!text.trim()) return null;
   try {
     return JSON.parse(text);

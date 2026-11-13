@@ -17,7 +17,8 @@ export async function findReviewRequest(protocol: string): Promise<ReviewRequest
     if (error instanceof OrionError && error.status === 404) throw new OrionError("Não encontramos um pedido com esse protocolo. Confira o número e tente novamente.", 404);
     throw error;
   }
-  if (!entity || entity.protocolo !== normalized) throw new OrionError("Não encontramos um pedido com esse protocolo.", 404);
+  if (!entity || typeof entity !== "object" || Array.isArray(entity)) throw new OrionError("O serviço retornou um pedido inválido. Tente novamente mais tarde.");
+  if (entity.protocolo !== normalized) throw new OrionError("Não encontramos um pedido com esse protocolo.", 404);
   const status = entity.status;
   if (!["enviado", "em_analise", "respondido"].includes(String(status))
     || typeof entity.codigoCruzamento !== "string" || typeof entity.endereco !== "string"

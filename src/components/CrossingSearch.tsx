@@ -21,7 +21,11 @@ export function CrossingSearch() {
         {error ? (
           <div className="search-error"><p role="alert">{error}</p><Button variant="secondary" onClick={retry}>Tentar novamente</Button></div>
         ) : !loading && crossings.length === 0 ? (
-          <div className="empty-results"><h3>Nenhum cruzamento encontrado</h3><p>Tente outra rua ou um código como C01.</p><Button variant="secondary" onClick={() => setQuery("")}>Limpar busca</Button></div>
+          <div className="empty-results">
+            <h3>{query.trim() ? "Nenhum cruzamento encontrado" : "Nenhum cruzamento cadastrado"}</h3>
+            <p>{query.trim() ? "Tente outra rua ou um código como C01." : "Os cruzamentos aparecerão aqui quando forem disponibilizados no projeto."}</p>
+            {query.trim() ? <Button variant="secondary" onClick={() => setQuery("")}>Limpar busca</Button> : <Button variant="secondary" onClick={retry}>Atualizar lista</Button>}
+          </div>
         ) : (
           <ul className="crossing-list">
             {crossings.map((crossing) => <li key={crossing.id}><CrossingCard {...crossing} href={`/cruzamentos/${crossing.code}`} /></li>)}
