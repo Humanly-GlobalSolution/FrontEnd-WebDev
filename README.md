@@ -23,11 +23,13 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 5 de 15: página inicial com cinco cruzamentos simulados, busca por rua ou código e consulta dos dados de cada cruzamento. A pesquisa aceita maiúsculas, minúsculas, palavras sem acento e múltiplos termos. O hook `useCruzamentos` separa o carregamento e a busca da apresentação; os serviços ainda usam uma fonte de demonstração explícita.
+Etapa 6 de 15: detalhe do cruzamento com comparação interativa entre “Hoje” e “Com o Farol Amigo”, diagrama de posições na faixa, linha de tempo e explicação textual equivalente. A página inicial possui cinco cruzamentos simulados e busca por rua ou código, aceitando diferenças de caixa, palavras sem acento e múltiplos termos. Os serviços ainda usam uma fonte de demonstração explícita.
 
-A comparação visual e o CRUD ainda serão implementados. A página informa que o envio de pedidos não está disponível. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
+O CRUD ainda será implementado. A página informa que o envio de pedidos não está disponível. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
 
 O tempo de referência é `Math.ceil(largura / 0.75)`: o arredondamento para cima evita apresentar um tempo inferior ao calculado. Por exemplo, 30 m resultam em 40 s e 16 m em 22 s. Os números são uma referência do modelo acadêmico e não uma indicação de segurança para atravessar uma via real.
+
+Na comparação, o tempo proposto é o maior entre o tempo atual e o tempo de referência, para nunca reduzir o período atual. As posições consideram velocidades constantes de 1,2 m/s e 0,75 m/s, limitadas à largura da travessia. A faixa adicional do gráfico representa a diferença até esse tempo proposto; ela não representa o teto de extensão por sensores, ainda a ser definido pelo grupo.
 
 ## Pré-requisitos e execução
 

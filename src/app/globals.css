@@ -100,6 +100,49 @@ h2 { max-width: 30ch; font-size: 1.65rem; font-weight: 700; line-height: 1.25; t
 .crossing-facts { display: grid; gap: 1.5rem; margin-top: 2rem; }
 .crossing-facts dt { color: var(--color-muted); }
 .crossing-facts dd { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.comparison { max-width: 42rem; margin-top: 2rem; }
+.comparison-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; margin-bottom: 1rem; }
+.comparison-summary > strong { font-size: 4rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.comparison-summary p { color: var(--color-muted); }
+.comparison-summary b { color: var(--color-asphalt); }
+.comparison-switch { display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.3rem; margin-block: 1.5rem 1rem; border-radius: 1.75rem; background: white; }
+.comparison-switch button { flex: 1 1 10rem; min-height: 3rem; padding: 0.65rem 1rem; border-radius: 999px; color: var(--color-muted); font-weight: 700; }
+.comparison-switch button:hover { background: #e1e4e8; }
+.comparison-switch button[aria-pressed="true"] { background: var(--color-asphalt); color: white; }
+.comparison-panel { padding: 1.5rem; border-radius: 1rem; background: #282e35; color: white; }
+.comparison-panel h2 { max-width: none; font-size: 1.125rem; line-height: 1.5; }
+.comparison-illustration { margin-top: 1.25rem; }
+.crossing-road { position: relative; height: 10rem; margin-top: 1.25rem; overflow: hidden; border-inline: 0.75rem solid #cbd0d6; border-radius: 1rem; background: #3b434d; }
+.zebra-stripes { position: absolute; inset: 1.8rem 0.25rem; display: flex; gap: 0.45rem; }
+.zebra-stripes span { flex: 1; background: white; }
+.crossing-midpoint { position: absolute; left: calc(50% - 0.25rem); top: 0; bottom: 0; width: 0.5rem; background: #067647; }
+.pedestrian-lane { position: absolute; left: 1.1rem; right: 1.1rem; }
+.adult-lane { top: 2rem; }
+.reference-lane { bottom: 3.1rem; }
+.pedestrian-marker { position: absolute; display: grid; place-items: center; width: 2rem; height: 2rem; border: 2px solid #282e35; border-radius: 50%; transform: translateX(-50%); font-weight: 700; }
+.adult-marker { background: white; color: var(--color-asphalt); }
+.reference-marker { background: var(--color-road); color: var(--color-asphalt); }
+.distance-labels { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.6rem; color: #d0d5da; font-size: 0.9rem; }
+.comparison-timeline { display: flex; height: 0.75rem; margin-top: 1.25rem; overflow: hidden; border-radius: 999px; }
+.timeline-normal { background: var(--color-signal); flex: none; }
+.timeline-extra { flex: 1; background: var(--color-road); }
+.timeline-shortfall { flex: 1; background: #f97066; }
+.timeline-labels { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 1rem; margin-top: 0.5rem; color: #d0d5da; font-size: 0.9rem; }
+.comparison-legend { display: grid; gap: 0.85rem; padding: 0; margin: 1.25rem 0 0; list-style: none; }
+.comparison-legend li { display: flex; align-items: baseline; gap: 0.6rem; }
+.legend-letter { display: inline-grid; place-items: center; flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: 0.85rem; font-weight: 700; }
+.comparison-explanation { padding: 1.25rem; margin-top: 1rem; border-radius: 1rem; background: #dcfce7; color: #065f46; }
+.comparison-explanation h2 { font-size: 1.2rem; max-width: none; }
+.comparison-explanation p { margin-top: 0.5rem; }
+.comparison-disclaimer { margin-block: 1rem; color: var(--color-muted); font-size: 0.95rem; }
+.review-placeholder { width: 100%; margin-block: 0.5rem; }
+
+@media (max-width: 25rem) {
+  .comparison-panel { padding: 1rem; }
+  .comparison-summary > strong { font-size: 3.25rem; }
+  .distance-labels { font-size: 0.8rem; }
+  .zebra-stripes { gap: 0.25rem; }
+}
 
 @media (max-width: 40rem) {
   .header-content { padding-block: 1.5rem 1rem; flex-wrap: wrap; }

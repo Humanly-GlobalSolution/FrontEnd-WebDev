@@ -9,6 +9,29 @@ export function calculateCrossingSeconds(width: number): number {
   return Math.ceil(width / REFERENCE_WALKING_SPEED);
 }
 
+export function compareCrossing(width: number, currentSeconds: number, extended: boolean) {
+  const referenceSeconds = calculateCrossingSeconds(width);
+  if (!Number.isFinite(currentSeconds) || currentSeconds <= 0) {
+    throw new RangeError("O tempo atual deve ser um número positivo.");
+  }
+  const proposedSeconds = Math.max(currentSeconds, referenceSeconds);
+  const seconds = extended ? proposedSeconds : currentSeconds;
+  const adultDistance = Math.min(width, seconds * 1.2);
+  const referenceDistance = Math.min(width, seconds * REFERENCE_WALKING_SPEED);
+
+  return {
+    seconds,
+    proposedSeconds,
+    extraSeconds: proposedSeconds - currentSeconds,
+    adultDistance,
+    referenceDistance,
+    adultRemaining: Math.max(0, width - adultDistance),
+    referenceRemaining: Math.max(0, width - referenceDistance),
+    adultPercent: (adultDistance / width) * 100,
+    referencePercent: (referenceDistance / width) * 100,
+  };
+}
+
 function normalizeSearch(value: string): string {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, " ").trim();
 }
