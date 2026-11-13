@@ -23,7 +23,7 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 3 de 15: identidade visual, cabeçalho, marca vetorial e estrutura responsiva inicial implementados conforme a referência do Figma. A fonte Atkinson Hyperlegible Next é servida localmente. O botão de letra maior alterna a escala de texto entre 100% e 125% durante a navegação; ao recarregar, retorna ao padrão.
+Etapa 4 de 15: botão, campo de texto, selo de status e cartão de cruzamento reutilizáveis implementados. A fonte Atkinson Hyperlegible Next é servida localmente. O botão de letra maior alterna a escala de texto entre 100% e 125% durante a navegação; ao recarregar, retorna ao padrão.
 
 A busca, os detalhes dos cruzamentos e o CRUD ainda serão implementados. A página informa que o envio de pedidos não está disponível.
 
@@ -38,6 +38,12 @@ npm run dev
 ```
 
 Abra http://localhost:3000. Para parar o servidor, pressione `Ctrl+C` no terminal.
+
+### Acompanhar as mudanças em tempo real
+
+Mantenha `npm run dev` executando e o site aberto no navegador. O Next.js aplica as alterações automaticamente ao salvar os arquivos. Caso o terminal informe outra porta, use o endereço exibido por ele. Se já houver um servidor deste projeto em execução, reutilize-o.
+
+Acesse http://localhost:3000/componentes para conferir a demonstração dos componentes, incluindo campos com erro e botões desabilitados ou carregando. Esta página usa exemplos e não envia nem exclui pedidos.
 
 ## Validação e produção
 
