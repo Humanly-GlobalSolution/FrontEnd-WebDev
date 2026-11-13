@@ -1,0 +1,84 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { spawn } from "node:child_process";
+import { createServer } from "node:http";
+import { once } from "node:events";
+
+process.loadEnvFile(".env.local");
+const brokerBase = new URL(process.env.ORION_BASE_URL);
+assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(brokerBase.hostname), "Teste permitido apenas em Orion local.");
+const brokerHeaders = {};
+if (process.env.ORION_FIWARE_SERVICE) brokerHeaders["Fiware-Service"] = process.env.ORION_FIWARE_SERVICE;
+if (process.env.ORION_FIWARE_SERVICEPATH) brokerHeaders["Fiware-ServicePath"] = process.env.ORION_FIWARE_SERVICEPATH;
+if (process.env.ORION_AUTH_TOKEN) brokerHeaders.Authorization = `Bearer ${process.env.ORION_AUTH_TOKEN}`;
+const probe = createServer();
+probe.listen(0, "127.0.0.1");
+await once(probe, "listening");
+const port = probe.address().port;
+await new Promise((resolve) => probe.close(resolve));
+const base = `http://127.0.0.1:${port}`;
+const child = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", String(port)], { env: { ...process.env, CROSSINGS_SOURCE: "orion" }, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+child.stdout.resume();
+child.stderr.resume();
+const adminHeaders = { Authorization: `Bearer ${process.env.ADMIN_API_TOKEN}`, "Content-Type": "application/json" };
+const code = `TEST_${Date.now()}`;
+const key = randomUUID();
+const type = process.env.ORION_REQUEST_TYPE || "PedidoRevisao";
+const requestId = `urn:ngsi-ld:${type}:${key}`;
+const rawUrl = new URL(`v2/entities/${encodeURIComponent(requestId)}?type=${encodeURIComponent(type)}`, `${brokerBase.href.replace(/\/$/, "")}/`);
+let crossingCreated = false;
+const post = (body, requestKey = key, extraHeaders = {}) => fetch(`${base}/api/pedidos`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": requestKey, ...extraHeaders }, body: JSON.stringify(body) });
+try {
+  let ready = false;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    try { if ((await fetch(`${base}/api/cruzamentos`)).ok) { ready = true; break; } } catch { /* Aguarda o Next. */ }
+    if (child.exitCode !== null) throw new Error("Servidor de teste encerrou.");
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  assert.ok(ready);
+  const creation = await fetch(`${base}/api/admin/cruzamentos`, { method: "POST", headers: adminHeaders, body: JSON.stringify({ code, address: "Cruzamento temporário do teste de pedidos", width: 30, currentSeconds: 20 }) });
+  assert.equal(creation.status, 201, await creation.clone().text());
+  crossingCreated = true;
+  const crossing = (await creation.json()).crossing;
+  const draft = { crossingCode: code, reason: "tempo_curto", comment: "De manhã a faixa fica cheia." };
+  assert.equal((await post({ ...draft, reason: "invalido" })).status, 400);
+  assert.equal((await post({ ...draft, comment: "a".repeat(501) })).status, 400);
+  assert.equal((await post({ ...draft, status: "respondido" })).status, 400);
+  assert.equal((await post(draft, "invalid-key")).status, 400);
+  assert.equal((await post({ ...draft, crossingCode: "INEXISTENTE" })).status, 404);
+  assert.equal((await post(draft, key, { Origin: "https://outro.example" })).status, 403);
+  const sent = await post(draft);
+  assert.equal(sent.status, 201, await sent.clone().text());
+  const result = await sent.json();
+  assert.match(result.request.protocol, /^FA-\d{4}-[A-F0-9]{32}$/);
+  assert.equal(result.request.status, "enviado");
+  assert.equal(result.request.crossingCode, code);
+  const saved = await fetch(rawUrl, { headers: brokerHeaders });
+  assert.equal(saved.status, 200);
+  const entity = await saved.json();
+  assert.equal(entity.protocolo.value, result.request.protocol);
+  assert.equal(entity.cruzamento.value, crossing.id);
+  assert.equal(entity.motivo.value, draft.reason);
+  assert.equal(entity.comentario.value, draft.comment);
+  assert.equal(entity.status.value, "enviado");
+  assert.ok(!Number.isNaN(Date.parse(entity.data.value)));
+  const retry = await post(draft);
+  assert.equal(retry.status, 200, await retry.clone().text());
+  const replayed = await retry.json();
+  assert.equal(replayed.replayed, true);
+  assert.equal(replayed.request.protocol, result.request.protocol);
+  assert.equal(replayed.request.createdAt, result.request.createdAt);
+  assert.equal((await post({ ...draft, comment: "Outro comentário" })).status, 409);
+  const reviewPage = await fetch(`${base}/cruzamentos/${code}/revisao`);
+  assert.equal(reviewPage.status, 200);
+  console.log("OK: gravação real do pedido, protocolo, relacionamento, campos persistidos, validações, origem e repetição sem duplicação.");
+} finally {
+  const cleanup = await fetch(rawUrl, { method: "DELETE", headers: brokerHeaders }).catch(() => null);
+  if (cleanup && ![204, 404].includes(cleanup.status)) console.error(`Verifique a limpeza da entidade ${requestId}.`);
+  if (crossingCreated) {
+    const cleanupCrossing = await fetch(`${base}/api/admin/cruzamentos/${code}`, { method: "DELETE", headers: adminHeaders }).catch(() => null);
+    if (cleanupCrossing?.status !== 204) console.error(`Verifique a limpeza do cruzamento ${code}.`);
+  }
+  child.kill();
+  if (child.exitCode === null) await once(child, "exit");
+}

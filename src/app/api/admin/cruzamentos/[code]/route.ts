@@ -1,4 +1,5 @@
-import { apiError, readCrossingBody, requireAdmin } from "@/services/admin.server";
+import { requireAdmin } from "@/services/admin.server";
+import { apiError, readJsonBody } from "@/services/http.server";
 import { deleteCrossing, findCrossing, updateCrossing } from "@/services/crossings.server";
 import { OrionError } from "@/services/orion.server";
 
@@ -17,7 +18,7 @@ export async function GET(request: Request, { params }: Context) {
 }
 
 export async function PATCH(request: Request, { params }: Context) {
-  try { requireAdmin(request); const { code } = await params; return Response.json({ crossing: await updateCrossing(code, await readCrossingBody(request)) }, { headers: { "Cache-Control": "no-store" } }); }
+  try { requireAdmin(request); const { code } = await params; return Response.json({ crossing: await updateCrossing(code, await readJsonBody(request)) }, { headers: { "Cache-Control": "no-store" } }); }
   catch (error) { return apiError(error); }
 }
 

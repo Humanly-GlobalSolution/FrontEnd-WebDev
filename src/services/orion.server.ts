@@ -33,7 +33,7 @@ export async function orionRequest(path: string, query: URLSearchParams = new UR
     throw new OrionError("Não foi possível conectar ao Orion. Tente novamente em instantes.");
   }
   if (!response.ok) {
-    if (response.status === 404) throw new OrionError("Cruzamento não encontrado.", 404);
+    if (response.status === 404) throw new OrionError("Registro não encontrado.", 404);
     if (response.status === 409 || response.status === 422) throw new OrionError("Já existe um cruzamento com este identificador ou a operação conflita com os dados existentes.", 409);
     throw new OrionError("O Orion não conseguiu atender à operação. Verifique o serviço e suas credenciais.");
   }

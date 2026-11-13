@@ -23,7 +23,7 @@ O site consultará entidades `Cruzamento` e fará o CRUD de entidades `PedidoRev
 
 ## Situação atual
 
-Etapa 8 de 15: integração NGSI-v2 e CRUD administrativo completo de cruzamentos, testados contra o Orion 4.5.0 local em `http://localhost:1026`. Inclui configuração por ambiente, validação, token administrativo, criação, listagem, consulta por código, atualização parcial e exclusão persistidas no Orion. Os contêineres existentes não foram reinstalados nem recriados.
+Etapa 9 de 15: envio real de pedidos de revisão ao Orion, confirmação com protocolo e hook `usePedido` para carregamento, erro e resultado. A criação do pedido e o CRUD administrativo de cruzamentos foram testados contra o Orion 4.5.0 local em `http://localhost:1026`.
 
 Consulte [o guia do Orion local](docs/orion-local.md) para comandos, atributos provisórios, rotas HTTP, testes e preparação da migração futura.
 
@@ -31,9 +31,19 @@ O formulário de revisão possui quatro motivos, comentário opcional de até 50
 
 O detalhe possui comparação interativa entre “Hoje” e “Com o Farol Amigo”, diagrama de posições na faixa, linha de tempo e explicação textual. A página inicial tem busca por rua ou código. No modo `demo`, há cinco cruzamentos simulados; no modo `orion`, a lista é consultada no serviço configurado.
 
-O CRUD de **pedidos de revisão** ainda será implementado nas próximas etapas. O CRUD administrativo de **cruzamentos** já funciona no backend. A página informa que o envio de pedidos não está disponível. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
+O CRUD administrativo de **cruzamentos** funciona no backend. Para **pedidos de revisão**, a criação já funciona; consulta por protocolo, edição e cancelamento serão implementados nas próximas etapas. A fonte Atkinson Hyperlegible Next é servida localmente e o botão de letra maior alterna a escala entre 100% e 125% até o próximo recarregamento.
 
-O formulário ainda não grava pedidos nem gera protocolos. O botão de envio permanece desabilitado na conferência até a integração dos pedidos com o Orion. Os dados digitados ficam na memória da página e são descartados ao sair ou recarregar. Para experimentar `/cruzamentos/C01/revisao`, cadastre primeiro C01 conforme o guia ou ative explicitamente o modo demo.
+No modo Orion, o formulário grava o pedido após a conferência e mostra o protocolo somente após a resposta de sucesso. Em caso de erro, mantém o preenchimento para nova tentativa. A mesma chave de envio recupera o registro existente, evitando duplicação se a resposta anterior se perder. Ao voltar para alterar o rascunho, uma nova chave será usada. No modo demo, o envio permanece desabilitado.
+
+Para experimentar `/cruzamentos/C01/revisao`, cadastre primeiro C01 conforme o guia. Guarde o protocolo exibido: a confirmação é mantida na memória da página e não fica disponível após recarregar nesta etapa. Este projeto acadêmico grava no Orion do projeto, sem encaminhar solicitações reais à CET.
+
+### Contrato provisório dos pedidos
+
+`POST /api/pedidos` recebe `{ crossingCode, reason, comment }` e um cabeçalho `Idempotency-Key` com UUID v4. O formulário gera essa chave automaticamente. O tipo padrão no Orion é `PedidoRevisao`, configurável por `ORION_REQUEST_TYPE`.
+
+Os atributos provisórios são `protocolo` (Text), `cruzamento` (Relationship com o ID do cruzamento), `codigoCruzamento`, `endereco`, `motivo`, `comentario`, `status` (Text) e `data` (DateTime). O status inicial é `enviado`. Não são coletados nome, CPF ou telefone. O endereço é uma cópia do endereço do cruzamento no momento do pedido.
+
+O protocolo usa o formato `FA-AAMM-<32 caracteres hexadecimais>`, preservando a aleatoriedade do UUID. Seu tamanho evita depender de uma sequência curta facilmente adivinhável; guarde-o como informação de acesso ao pedido. O contrato deve ser alinhado com o Bruno antes da integração definitiva.
 
 O tempo de referência é `Math.ceil(largura / 0.75)`: o arredondamento para cima evita apresentar um tempo inferior ao calculado. Por exemplo, 30 m resultam em 40 s e 16 m em 22 s. Os números são uma referência do modelo acadêmico e não uma indicação de segurança para atravessar uma via real.
 
@@ -98,10 +108,11 @@ As consultas não usam cache e têm timeout de 8 segundos por página. Falhas HT
 ```bash
 npm run build
 npm run test:orion:local
+npm run test:pedidos:local
 node tests/orion.integration.mjs
 ```
 
-`test:orion:local` testa o CRUD completo contra o Orion local real, verificando também a persistência diretamente nele. Cria e remove somente um cruzamento temporário próprio. O teste usa um Next em porta temporária e recusa Orion remoto. O segundo teste usa Orion simulado para conferir paginação e falhas. Os processos criados pelos testes são encerrados ao final.
+`test:orion:local` testa o CRUD de cruzamentos. `test:pedidos:local` confere criação de pedido, protocolo, atributos persistidos e repetição de envio sem duplicação. Ambos usam o Orion local real e um Next em porta temporária, recusam Orion remoto e removem somente os registros temporários que criaram. O teste `orion.integration.mjs` usa Orion simulado para conferir paginação e falhas. Os processos criados pelos testes são encerrados ao final.
 
 Na configuração inicial, lint, checagem de tipos e build concluíram com sucesso. A auditoria npm não apontou vulnerabilidades de produção, mas registrou 7 avisos moderados em dependências de desenvolvimento da cadeia `typescript-eslint`/`minimatch`, ainda presentes após `npm audit fix`.
 

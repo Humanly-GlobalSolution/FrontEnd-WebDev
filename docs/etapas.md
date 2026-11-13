@@ -24,6 +24,8 @@ Implementar uma etapa por vez, verificar o resultado e parar para Eduardo revisa
 
 As etapas poderão ser ajustadas conforme os testes, preservando pelo menos 15 commits com mudanças reais. Atualizações de documentação e evidências de verificação acompanham a etapa correspondente.
 
+Antes de qualquer publicação ou preparação da entrega final, revisar e remover arquivos, páginas de demonstração, pastas e código sem uso que não sejam exigidos pelo professor nem necessários à execução. Repetir as validações após a limpeza, conforme solicitação de Eduardo.
+
 ## Requisitos de aceite
 
 - React com Next.js e estilização Tailwind CSS.

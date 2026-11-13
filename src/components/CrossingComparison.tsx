@@ -55,7 +55,7 @@ export function CrossingComparison({ code, width, currentSeconds }: { code: stri
       </aside>
       <p className="comparison-disclaimer">Simulação educativa, sem informação do sinal ao vivo. Ao atravessar, observe a sinalização da via. A velocidade de cada pessoa pode variar.</p>
       <Link className="button button-primary review-placeholder" href={`/cruzamentos/${code}/revisao`}>Pedir revisão do tempo</Link>
-      <p className="field-hint">Você pode preencher e conferir o formulário. O envio ainda não está disponível.</p>
+      <p className="field-hint">Preencha e confira o formulário antes de enviar. Não é necessário informar seu nome.</p>
     </div>
   );
 }

@@ -27,7 +27,7 @@ export function CrossingSearch() {
           </ul>
         )}
       </div>
-      <p className="unavailable-notice">O envio e o acompanhamento de pedidos ainda não estão disponíveis.</p>
+      <p className="unavailable-notice">Escolha um cruzamento para pedir a revisão. O acompanhamento pelo protocolo estará disponível em breve.</p>
     </section>
   );
 }

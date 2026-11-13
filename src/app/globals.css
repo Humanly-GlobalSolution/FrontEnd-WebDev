@@ -164,6 +164,15 @@ h2 { max-width: 30ch; font-size: 1.65rem; font-weight: 700; line-height: 1.25; t
 .request-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
 .request-actions .button { flex: 1 1 12rem; }
 .request-draft-notice { margin-top: 1.5rem; color: var(--color-muted); font-size: 0.95rem; }
+.request-error { margin-top: 1rem; }
+.request-confirmation { max-width: 42rem; }
+.confirmation-banner { padding: 2rem; border-radius: 1.5rem; background: var(--color-signal); color: var(--color-asphalt); }
+.confirmation-banner svg { display: block; width: 3rem; height: 3rem; margin-bottom: 1.5rem; }
+.confirmation-banner h1 { margin-bottom: 1rem; }
+.protocol-block { padding: 1.5rem; margin-block: 1.5rem; border-radius: 1rem; background: white; }
+.protocol-block h2 { margin-bottom: 0.75rem; font-size: 1rem; color: var(--color-muted); }
+.protocol-value { margin-bottom: 1rem; font-size: 1.7rem; line-height: 1.3; font-weight: 700; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.request-confirmation > .request-action { margin-top: 1.5rem; }
 
 @media (max-width: 25rem) {
   .comparison-panel { padding: 1rem; }

@@ -4,9 +4,11 @@ import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
 import { ReasonOption } from "@/components/ReasonOption";
 import { RequestProgress } from "@/components/RequestProgress";
+import { RequestConfirmation } from "@/components/RequestConfirmation";
+import { usePedido } from "@/hooks/usePedido";
 import { MAX_COMMENT_LENGTH, REVIEW_REASONS, validateReviewDraft, type ReviewReason } from "@/lib/reviewRequests";
 
-export function ReviewRequestForm({ code, address }: { code: string; address: string }) {
+export function ReviewRequestForm({ code, address, canSend }: { code: string; address: string; canSend: boolean }) {
   const [reason, setReason] = useState<ReviewReason | "">("");
   const [comment, setComment] = useState("");
   const [attempted, setAttempted] = useState(false);
@@ -15,6 +17,8 @@ export function ReviewRequestForm({ code, address }: { code: string; address: st
   const commentInput = useRef<HTMLTextAreaElement>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const formHeading = useRef<HTMLHeadingElement>(null);
+  const confirmationHeading = useRef<HTMLHeadingElement>(null);
+  const { create, resetDraft, loading, error, createdRequest } = usePedido();
   const errors = validateReviewDraft(reason, comment);
 
   function review(event: FormEvent<HTMLFormElement>) {
@@ -33,9 +37,18 @@ export function ReviewRequestForm({ code, address }: { code: string; address: st
   }
 
   function edit() {
+    resetDraft();
     setStep(1);
     requestAnimationFrame(() => formHeading.current?.focus());
   }
+
+  async function send() {
+    if (!reason || !canSend) return;
+    const result = await create({ crossingCode: code, reason, comment });
+    if (result) requestAnimationFrame(() => confirmationHeading.current?.focus());
+  }
+
+  if (createdRequest) return <RequestConfirmation request={createdRequest} headingRef={confirmationHeading} />;
 
   return (
     <div className="request-form">
@@ -68,14 +81,15 @@ export function ReviewRequestForm({ code, address }: { code: string; address: st
             <div><dt>O que acontece</dt><dd>{REVIEW_REASONS.find((item) => item.value === reason)?.label}</dd></div>
             <div><dt>Seu comentário</dt><dd>{comment.trim() || "Nenhum comentário informado."}</dd></div>
           </dl>
-          <p className="demo-notice">Seu pedido ainda não foi enviado. O envio será habilitado quando a integração com o FIWARE Orion estiver pronta.</p>
+          <p className="demo-notice">{canSend ? "Confira as informações antes de enviar. O protocolo será gerado após a gravação no Farol Amigo." : "Modo demonstração: nenhum pedido será gravado. Ative a conexão com o Orion para enviar."}</p>
+          {error ? <p className="field-error request-error" role="alert">{error} Seus dados continuam nesta página.</p> : null}
           <div className="request-actions">
-            <Button variant="secondary" onClick={edit}>Alterar informações</Button>
-            <Button disabled>Enviar pedido</Button>
+            <Button variant="secondary" onClick={edit} disabled={loading}>Alterar informações</Button>
+            <Button onClick={send} disabled={!canSend} loading={loading}>{error ? "Tentar enviar novamente" : "Enviar pedido"}</Button>
           </div>
         </section>
       )}
-      <p className="request-draft-notice">Demonstração do formulário. As informações ficam apenas nesta página e são descartadas ao sair ou recarregar. Nenhum protocolo é gerado nesta etapa.</p>
+      <p className="request-draft-notice">Antes de enviar, as informações ficam apenas nesta página e são descartadas ao sair ou recarregar. Não inclua dados pessoais no comentário.</p>
     </div>
   );
 }
