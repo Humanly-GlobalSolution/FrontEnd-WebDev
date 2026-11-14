@@ -24,6 +24,6 @@ export function validateReviewDraft(reason: string, comment: string) {
       : "Escolha o que acontece neste farol.",
     comment: comment.length > MAX_COMMENT_LENGTH
       ? `Escreva um comentário com até ${MAX_COMMENT_LENGTH} caracteres.`
-      : /[<>"'=;()]/.test(comment) ? "Retire estes caracteres do comentário: < > aspas simples ou duplas, = ; ( ). O Orion não aceita esses símbolos." : null,
+      : /[<>"'=;()]/.test(comment) ? "O comentário não pode ter estes símbolos: < > \" ' = ; ( )" : null,
   };
 }

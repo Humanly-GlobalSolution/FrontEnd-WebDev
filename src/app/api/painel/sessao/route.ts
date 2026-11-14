@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((key) => key !== "code") || !("code" in body) || typeof body.code !== "string" || body.code.length > 512) throw new OrionError("Informe o código de acesso do operador.", 400);
     const success = validOperatorCode(body.code.trim());
     checkLoginAttempts(request, success);
-    if (!success) throw new OrionError("Código de acesso incorreto. Confira com a equipe responsável.", 401);
+    if (!success) throw new OrionError("Código de acesso incorreto. Confira e tente de novo.", 401);
     return Response.json({ authenticated: true }, { headers: { ...headers, "Set-Cookie": createOperatorCookie() } });
   } catch (error) {
     const response = apiError(error);

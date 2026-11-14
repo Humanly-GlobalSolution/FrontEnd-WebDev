@@ -1,6 +1,6 @@
-import type { CrossingMetadata } from "@/types/crossing";
+import type { CrossingLocationData } from "@/types/crossing";
 
-export function CrossingLocation({ address, metadata }: { address: string; metadata: CrossingMetadata }) {
+export function CrossingLocation({ address, metadata }: { address: string; metadata: CrossingLocationData }) {
   const { latitude, longitude } = metadata;
   const marker = `${latitude},${longitude}`;
   const query = new URLSearchParams({
@@ -14,7 +14,7 @@ export function CrossingLocation({ address, metadata }: { address: string; metad
     <p>{address}</p>
     <iframe title={`Mapa de ${address}`} src={`https://www.openstreetmap.org/export/embed.html?${query}`} loading="lazy" referrerPolicy="no-referrer" />
     <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="button button-secondary">Abrir localização no mapa</a>
-    <p className="field-hint">Referência cartográfica: <a href={metadata.locationSource} target="_blank" rel="noopener noreferrer">OpenStreetMap</a>. O marcador representa a localização do cruzamento, não uma medição da faixa.</p>
+    <p className="field-hint">Referência cartográfica: <a href={metadata.locationSource} target="_blank" rel="noopener noreferrer">{metadata.locationSourceLabel ?? "OpenStreetMap"}</a>. O marcador representa a localização do cruzamento, não uma medição da faixa.</p>
     {metadata.locationNote ? <p className="field-hint">{metadata.locationNote}</p> : null}
   </section>;
 }

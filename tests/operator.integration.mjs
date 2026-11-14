@@ -14,7 +14,7 @@ const crossing = (code) => {
 };
 const first = { ...crossing("C01"), estado: field("FALHA"), extensao_s: field(15, "Number"), leitura_valida: field(false, "Boolean") };
 const request = { id: `urn:ngsi-ld:PedidoRevisao:${protocol}`, type: "PedidoRevisao", protocolo: field(protocol), cruzamento_id: field("C01"), motivo: field("tempo_curto"), comentario: field("Travessia curta."), status: field("enviado"), resposta: field(""), criado_em: field("2026-11-13T12:00:00.000Z", "DateTime"), atualizado_em: field("2026-11-13T12:00:00.000Z", "DateTime") };
-const records = [first, crossing("C02"), { ...crossing("C03"), estado: field("INVALIDO"), extensao_s: field(99, "Number") }, request];
+const records = [first, crossing("C02"), { ...crossing("C03"), estado: field("INVALIDO"), extensao_s: field(99, "Number") }, crossing("C04"), crossing("C05"), request];
 const writes = [];
 const broker = createServer(async (req, res) => {
   const send = (status, body) => { res.writeHead(status, { "Content-Type": "application/json" }); res.end(body === undefined ? undefined : JSON.stringify(body)); };
@@ -32,7 +32,7 @@ const broker = createServer(async (req, res) => {
       const offset = Number(url.searchParams.get("offset") || 0);
       return send(200, values.slice(offset, offset + Number(url.searchParams.get("limit") || 100)));
     }
-    assert.equal(req.method, "PATCH");
+    assert.ok(["PATCH", "POST"].includes(req.method));
     assert.equal(entity?.id, request.id, "O operador não pode escrever na telemetria dos cruzamentos.");
     assert.equal(req.headers["content-type"], "application/json");
     let raw = ""; for await (const chunk of req) raw += chunk;
@@ -68,7 +68,9 @@ try {
   assert.equal((await fetch(`${base}/api/pedidos`)).status, 401);
   assert.equal((await fetch(`${base}/api/painel/pedidos/${protocol}`, { method: "PATCH", headers: json, body: JSON.stringify({ status: "em_analise" }) })).status, 401);
   assert.equal(writes.length, 0);
-  assert.equal((await login({ code: "incorreto" })).status, 401);
+  const wrong = await login({ code: "incorreto" });
+  assert.equal(wrong.status, 401);
+  assert.equal(wrong.headers.get("set-cookie"), null);
   assert.equal((await login({ code: token }, { Origin: "https://outro.example" })).status, 403);
   assert.equal((await login({ code: token, role: "admin" })).status, 400);
   const authenticated = await login({ code: token }, { Origin: base });
@@ -99,6 +101,12 @@ try {
   const changedTelemetry = await (await fetch(`${base}/api/painel/cruzamentos`, { headers })).json();
   assert.equal(changedTelemetry.crossings[0].signalState, "TEMPO_ESTENDIDO");
   assert.equal(changedTelemetry.crossings[0].extensionSeconds, 6);
+  const legacy = (await (await fetch(`${base}/api/pedidos/${protocol}`)).json()).request;
+  assert.equal(legacy.perfil, "outro");
+  const legacyEdit = await fetch(`${base}/api/pedidos/${protocol}`, { method: "PATCH", headers: json, body: JSON.stringify({ perfil: "pcd" }) });
+  assert.equal(legacyEdit.status, 200);
+  assert.deepEqual(request.perfil, field("pcd"));
+  writes.length = 0;
   const listed = await fetch(`${base}/api/pedidos?limit=20&offset=0`, { headers });
   assert.equal(listed.status, 200); assert.equal((await listed.json()).requests[0].protocol, protocol);
   const patch = (body, extra = {}) => fetch(`${base}/api/painel/pedidos/${protocol}`, { method: "PATCH", headers: { ...headers, ...extra }, body: JSON.stringify(body) });
@@ -116,6 +124,7 @@ try {
   const result = (await citizen.json()).request;
   assert.equal(citizen.status, 200, "O cidadão continua consultando sem cookie nem login.");
   assert.equal(result.status, "respondido"); assert.equal(result.response, "Tempo recebido para avaliacao da equipe.");
+  assert.equal(result.perfil, "pcd");
   assert.equal(result.reason, "tempo_curto"); assert.equal(result.comment, "Travessia curta.");
   assert.equal((await fetch(`${base}/api/pedidos/${protocol}`, { method: "PATCH", headers: json, body: JSON.stringify({ comment: "Alteracao" }) })).status, 409);
   assert.equal((await fetch(`${base}/api/pedidos/${protocol}`, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } })).status, 409);

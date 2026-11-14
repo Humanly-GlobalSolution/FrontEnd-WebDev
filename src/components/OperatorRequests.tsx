@@ -1,5 +1,6 @@
 "use client";
 
+import { PERFIS } from "@/lib/regras";
 import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/TextField";
@@ -64,6 +65,7 @@ export function OperatorRequests({ requests, offset, nextOffset, refreshing, onP
       <article>
         <div className="operator-order-heading"><h3>{item.protocol}</h3><StatusBadge status={badges[item.status]} /></div>
         <p><strong>{item.crossingCode}</strong> · {item.address}</p>
+        <p>Quem vai atravessar: {PERFIS[item.perfil]}</p>
         <p className="operator-order-reason">{REVIEW_REASONS.find((reason) => reason.value === item.reason)?.label}</p>
         {item.comment ? <p className="operator-order-text">{item.comment}</p> : <p className="field-hint">Sem comentário adicional.</p>}
         {item.response ? <div className="operator-recorded-answer"><strong>Resposta registrada</strong><p className="operator-order-text">{item.response}</p></div> : null}

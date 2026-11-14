@@ -21,10 +21,10 @@ export async function orionRequest(path: string, query: URLSearchParams = new UR
   }
 
   const headers = new Headers({ Accept: "application/json" });
+  // Orion rejeita Content-Type em GET/DELETE sem corpo.
   if (init.body !== undefined) headers.set("Content-Type", "application/json");
-  headers.set("Fiware-Service", process.env.ORION_FIWARE_SERVICE || "farolamigo");
-  headers.set("Fiware-ServicePath", process.env.ORION_FIWARE_SERVICEPATH || "/");
-  if (process.env.ORION_AUTH_TOKEN) headers.set("Authorization", `Bearer ${process.env.ORION_AUTH_TOKEN}`);
+  headers.set("Fiware-Service", "farolamigo");
+  headers.set("Fiware-ServicePath", "/");
 
   let response: Response;
   const timeoutSignal = AbortSignal.timeout(8000);

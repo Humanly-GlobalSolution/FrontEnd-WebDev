@@ -14,7 +14,8 @@
         "test:pedidos": "node tests/requests.integration.mjs",
         "test:painel": "node tests/operator.integration.mjs",
         "test:http": "node --test tests/httpClient.test.mjs tests/requestOrigin.test.mjs",
-        "test:calculo": "node --test tests/crossings.test.mjs"
+        "test:calculo": "node --test tests/crossings.test.mjs tests/regras.test.mjs",
+        "test:docker": "node tests/docker.integration.mjs"
     },
     "type": "module",
     "dependencies": {

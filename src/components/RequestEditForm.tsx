@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ProfileChoice } from "@/components/ProfileChoice";
+import { type Perfil } from "@/lib/regras";
 import { Button } from "@/components/Button";
 import { ReasonOption } from "@/components/ReasonOption";
 import { MAX_COMMENT_LENGTH, REVIEW_REASONS, validateReviewDraft } from "@/lib/reviewRequests";
@@ -15,6 +17,7 @@ type RequestEditFormProps = {
 };
 
 export function RequestEditForm({ request, loading, error, onSave, onCancel }: RequestEditFormProps) {
+  const [perfil, setPerfil] = useState<Perfil>(request.perfil);
   const [reason, setReason] = useState(request.reason);
   const [comment, setComment] = useState(request.comment);
   const [attempted, setAttempted] = useState(false);
@@ -30,13 +33,14 @@ export function RequestEditForm({ request, loading, error, onSave, onCancel }: R
     setAttempted(true);
     if (errors.reason) { fieldset.current?.querySelector("input")?.focus(); return; }
     if (errors.comment) { commentInput.current?.focus(); return; }
-    await onSave({ reason, comment });
+    await onSave({ reason, perfil, comment });
   }
 
   return (
     <form onSubmit={submit} className="request-edit-form" aria-busy={loading} noValidate>
       <h2 ref={heading} tabIndex={-1}>O que acontece neste farol?</h2>
-      <p className="preview-description">Você pode mudar o motivo e o comentário enquanto o pedido estiver enviado ou em análise.</p>
+      <p className="preview-description">Você pode mudar o motivo, o perfil e o comentário enquanto o pedido estiver enviado ou em análise.</p>
+      <ProfileChoice value={perfil} onChange={setPerfil} optional disabled={loading} />
       <fieldset className="reason-group" ref={fieldset} disabled={loading} role="radiogroup" aria-invalid={attempted && Boolean(errors.reason) || undefined} aria-describedby={attempted && errors.reason ? "reason-error" : undefined}>
         <legend>Escolha um motivo (obrigatório)</legend>
         <div className="reason-options">{REVIEW_REASONS.map((item) => <ReasonOption key={item.value} {...item} checked={reason === item.value} onChange={setReason} invalid={attempted && Boolean(errors.reason)} />)}</div>

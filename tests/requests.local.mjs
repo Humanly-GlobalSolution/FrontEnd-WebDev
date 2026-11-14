@@ -38,6 +38,14 @@ try {
   }
   assert.ok(ready);
   assert.equal((await fetch(`${base}/api/pedidos`)).status, 401);
+  assert.equal((await fetch(`${base}/api/painel/cruzamentos`)).status, 401);
+  assert.equal((await fetch(`${base}/api/painel/pedidos/FA-ABCD-2345`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "em_analise" }) })).status, 401);
+  const wrongLogin = await fetch(`${base}/api/painel/sessao`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: "codigo-incorreto" }) });
+  assert.equal(wrongLogin.status, 401);
+  assert.equal(wrongLogin.headers.get("set-cookie"), null);
+  const login = await fetch(`${base}/api/painel/sessao`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: process.env.ADMIN_API_TOKEN }) });
+  assert.equal(login.status, 200);
+  const operatorCookie = login.headers.get("set-cookie").split(";")[0];
   assert.equal((await fetch(`${base}/api/pedidos`, { headers: { Authorization: "Bearer incorreto" } })).status, 401);
   for (const query of ["limit=0", "limit=101", "offset=-1", "offset=10001", "limit=1&limit=2", "type=Outro"]) {
     assert.equal((await fetch(`${base}/api/pedidos?${query}`, { headers: adminHeaders })).status, 400);
@@ -46,7 +54,12 @@ try {
   assert.equal(creation.status, 201, await creation.clone().text());
   crossingCreated = true;
   const crossing = (await creation.json()).crossing;
-  const draft = { crossingCode: code, reason: "tempo_curto", comment: "De manhã a faixa fica cheia." };
+  const draft = { crossingCode: code, reason: "tempo_curto", perfil: "pcd", comment: "De manhã a faixa fica cheia." };
+  assert.equal((await post({ ...draft, perfil: undefined })).status, 400);
+  for (const perfil of ["invalido", null, 1, ["pcd"]]) assert.equal((await post({ ...draft, perfil })).status, 400);
+  const invalidComment = await post({ ...draft, comment: "<" });
+  assert.equal(invalidComment.status, 400);
+  assert.match((await invalidComment.json()).error, /O comentário não pode ter estes símbolos/);
   assert.equal((await post({ ...draft, reason: "invalido" })).status, 400);
   assert.equal((await post({ ...draft, reason: "equipamento" })).status, 400);
   assert.equal((await post({ ...draft, comment: "a".repeat(281) })).status, 400);
@@ -70,7 +83,9 @@ try {
   const entity = await saved.json();
   assert.equal(entity.protocolo.value, result.request.protocol);
   assert.equal(entity.cruzamento_id.value, crossing.code);
-  assert.deepEqual(Object.keys(entity).sort(), ['id', 'type', 'protocolo', 'cruzamento_id', 'motivo', 'comentario', 'status', 'resposta', 'criado_em', 'atualizado_em'].sort());
+  assert.deepEqual(Object.keys(entity).sort(), ['id', 'type', 'protocolo', 'cruzamento_id', 'motivo', 'perfil', 'comentario', 'status', 'resposta', 'criado_em', 'atualizado_em'].sort());
+  assert.equal(entity.perfil.type, "Text");
+  assert.equal(entity.perfil.value, "pcd");
   assert.equal(entity.resposta.value, "");
   assert.equal(entity.motivo.value, draft.reason);
   assert.equal(entity.comentario.value, draft.comment);
@@ -96,6 +111,7 @@ try {
   assert.equal(lookup.status, 200);
   assert.equal(lookup.headers.get("cache-control"), "no-store");
   const found = (await lookup.json()).request;
+  assert.equal(found.perfil, "pcd");
   assert.equal(found.protocol, result.request.protocol);
   assert.equal(found.status, "enviado");
   assert.equal(found.comment, draft.comment);
@@ -104,6 +120,13 @@ try {
   assert.ok(!("answeredAt" in found), "Não inventar data de resposta.");
   assert.ok(!("id" in found), "Não expor o ID interno.");
   const edit = (changes, headers = {}) => fetch(lookupUrl, { method: "PATCH", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(changes) });
+  // Simula um pedido anterior à adoção de perfil no próprio registro de teste.
+  const removeProfile = await fetch(`${rawUrl.origin}${rawUrl.pathname}/attrs/perfil${rawUrl.search}`, { method: "DELETE", headers: brokerHeaders });
+  assert.equal(removeProfile.status, 204);
+  assert.equal((await (await fetch(lookupUrl)).json()).request.perfil, "outro");
+  const upgrade = await edit({ perfil: "pcd" });
+  assert.equal(upgrade.status, 200);
+  assert.equal((await upgrade.json()).request.perfil, "pcd");
   assert.equal((await edit({ reason: "invalido" })).status, 400);
   assert.equal((await edit({ comment: "a".repeat(281) })).status, 400);
   for (const character of ['<', '>', '"', "'", '=', ';', '(', ')']) assert.equal((await edit({ comment: character })).status, 400);
@@ -140,18 +163,22 @@ try {
   const reviewing = (await (await fetch(lookupUrl)).json()).request;
   assert.equal(reviewing.status, "em_analise");
   assert.ok(!("reviewedAt" in reviewing));
-  const editedWhileReviewing = await edit({ comment: "" });
+  assert.equal((await edit({ perfil: "invalido" })).status, 400);
+  const editedWhileReviewing = await edit({ comment: "", perfil: "idoso" });
   assert.equal(editedWhileReviewing.status, 200);
   const cleared = (await editedWhileReviewing.json()).request;
+  assert.equal(cleared.perfil, "idoso");
   assert.equal(cleared.comment, "");
   assert.equal(cleared.reason, "falta_som");
   assert.equal(cleared.status, "em_analise");
   const reviewDate = new Date().toISOString();
-  await changeStatus({ status: { type: "Text", value: "respondido" }, resposta: { type: "Text", value: "Análise de teste concluída." }, atualizado_em: { type: "DateTime", value: reviewDate } }, "POST");
+  const operatorAnswer = await fetch(`${base}/api/painel/pedidos/${result.request.protocol}`, { method: "PATCH", headers: { "Content-Type": "application/json", Cookie: operatorCookie }, body: JSON.stringify({ status: "respondido", response: "Análise de teste concluída." }) });
+  assert.equal(operatorAnswer.status, 200, await operatorAnswer.clone().text());
   const answered = (await (await fetch(lookupUrl)).json()).request;
   assert.equal(answered.status, "respondido");
   assert.equal(answered.response, "Análise de teste concluída.");
-  assert.equal(Date.parse(answered.updatedAt), Date.parse(reviewDate));
+  assert.ok(Date.parse(answered.updatedAt) >= Date.parse(reviewDate));
+  assert.equal((await edit({ perfil: "pcd" })).status, 409);
   assert.equal((await edit({ reason: "outro", comment: "Alteração bloqueada" })).status, 409);
   const stillAnswered = (await (await fetch(lookupUrl)).json()).request;
   assert.equal(stillAnswered.reason, "falta_som");
@@ -162,7 +189,7 @@ try {
   assert.equal((await fetch(`${base}/api/pedidos/INVALIDO`, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } })).status, 400);
   for (const status of ["enviado", "em_analise"]) {
     const cancellationKey = randomUUID();
-    const another = await post(status === "enviado" ? { ...draft, comment: "a".repeat(280) } : { crossingCode: code, reason: "botao_cartao" }, cancellationKey);
+    const another = await post(status === "enviado" ? { ...draft, comment: "a".repeat(280) } : { crossingCode: code, reason: "botao_cartao", perfil: "outro" }, cancellationKey);
     assert.equal(another.status, 201);
     const anotherProtocol = (await another.json()).request.protocol;
     assert.notEqual(anotherProtocol, result.request.protocol);

@@ -18,7 +18,7 @@ export function RequestTimeline({ request }: { request: ReviewRequestDetails }) 
           <li key={step.value} className={index <= current ? "timeline-reached" : undefined} aria-current={index === current ? "step" : undefined}>
             <span className="timeline-step-mark" aria-hidden="true">{index + 1}</span>
             <div><h3>{step.label}{index === current ? <span className="sr-only"> — status atual</span> : null}</h3>
-              {index <= current && date ? <time dateTime={date}>{new Date(date).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</time> : <p>{index === current ? "Status informado pelo Orion." : index < current ? "Etapa anterior ao status atual." : "Ainda não informado."}</p>}
+              {index <= current && date ? <time dateTime={date}>{new Date(date).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</time> : <p>{index === current ? "Andamento informado pela equipe." : index < current ? "Etapa anterior ao status atual." : "Ainda não informado."}</p>}
             </div>
           </li>
           );

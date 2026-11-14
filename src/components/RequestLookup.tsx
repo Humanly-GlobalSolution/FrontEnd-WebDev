@@ -1,5 +1,6 @@
 "use client";
 
+import { PERFIS } from "@/lib/regras";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
 import { RequestTimeline } from "@/components/RequestTimeline";
@@ -92,12 +93,13 @@ export function RequestLookup({ initialProtocol }: { initialProtocol: string }) 
             <h2 id="request-details-title">Detalhes do pedido</h2>
             <dl className="request-details">
               <div><dt>Cruzamento</dt><dd>{foundRequest.crossingCode} · {foundRequest.address}</dd></div>
+              <div><dt>Quem vai atravessar</dt><dd>{PERFIS[foundRequest.perfil]}</dd></div>
               <div><dt>O que acontece</dt><dd>{REVIEW_REASONS.find((item) => item.value === foundRequest.reason)?.label}</dd></div>
               <div><dt>Seu comentário</dt><dd>{foundRequest.comment || "Nenhum comentário informado."}</dd></div>
               <div><dt>Última atualização do pedido</dt><dd><time dateTime={foundRequest.updatedAt}>{new Date(foundRequest.updatedAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</time></dd></div>
             </dl>
           </section>
-          {foundRequest.status === "respondido" ? <section className="request-section" aria-labelledby="response-title"><h2 id="response-title">Resposta</h2><p className="request-response">{foundRequest.response || "O pedido está marcado como respondido, mas o texto da resposta ainda não foi informado no Orion."}</p></section> : null}
+          {foundRequest.status === "respondido" ? <section className="request-section" aria-labelledby="response-title"><h2 id="response-title">Resposta</h2><p className="request-response">{foundRequest.response || "Seu pedido está marcado como respondido. O texto da resposta ainda não está disponível."}</p></section> : null}
           <div className="request-actions">
             {foundRequest.status !== "respondido" ? <Button variant="secondary" onClick={() => { setEditing(true); setNotice(null); clearError(); }}>Editar pedido</Button> : null}
             {foundRequest.status !== "respondido" ? <Button variant="danger" onClick={() => { setCanceling(true); setNotice(null); clearError(); }}>Cancelar pedido</Button> : null}

@@ -21,7 +21,7 @@ const broker = createServer((request, response) => {
   if (scenario === "empty") { response.end("[]"); return; }
   if (scenario === "updated") {
     response.end(JSON.stringify([
-      { ...entity(1), id: "urn:ngsi-ld:Cruzamento:C01", codigo: "C01" },
+      { ...entity(1), id: "urn:ngsi-ld:Cruzamento:C01", codigo: "C01", endereco: "Av. Paulista x Al. Joaquim Eugênio de Lima" },
       ...Object.values(crossingCatalog).map((crossing) => ({ id: crossing.id, type: "Cruzamento", codigo: crossing.code, endereco: crossing.address, largura: crossing.width, tempoAtual: crossing.currentSeconds })),
       { ...entity(4), id: "urn:ngsi-ld:Cruzamento:C04", codigo: "C04", endereco: "Av. Paulista x Av. Brigadeiro Luís Antônio", largura: 19.5, tempoAtual: 24 },
     ]));
@@ -69,9 +69,10 @@ try {
   assert.equal(calls[0].path, "/v2/entities");
   assert.equal(calls[0].query.get("type"), "Cruzamento");
   assert.equal(calls[0].query.get("options"), "keyValues");
-  assert.equal(calls[0].headers["fiware-service"], "test-service");
-  assert.equal(calls[0].headers["fiware-servicepath"], "/test");
-  assert.equal(calls[0].headers.authorization, "Bearer test-only-token");
+  assert.equal(calls[0].headers["fiware-service"], "farolamigo");
+  assert.equal(calls[0].headers["fiware-servicepath"], "/");
+  assert.equal(calls[0].headers.authorization, undefined);
+  assert.equal(calls[0].headers["content-type"], undefined);
   assert.ok(!JSON.stringify(payload).includes("test-only-token"));
 
   const detail = await fetch(`${base}/cruzamentos/C1`);
@@ -91,14 +92,13 @@ try {
     assert.deepEqual(row.metadata, crossing.metadata);
     const page = await (await fetch(`${base}/cruzamentos/${crossing.code}`)).text();
     assert.ok(page.includes(crossing.address));
-    assert.ok(page.includes("Sem o Farol Amigo"));
-    assert.ok(page.includes(`id="profile-${crossing.code}"`));
-    assert.ok(page.includes(`id="activation-${crossing.code}"`));
-    for (const value of ["adult", "elderly", "reducedMobility", "button", "sensor", "card"]) {
+    assert.ok(page.includes("Quem vai atravessar?"));
+    assert.ok(page.includes('role="radiogroup"'));
+    for (const value of ["idoso", "pcd"]) {
       assert.ok(page.includes(`value="${value}"`));
     }
     assert.ok(page.includes("Google Earth"));
-    assert.ok(page.includes("Não são tempos oficiais da CET"));
+    assert.ok(page.includes("Tempos estimados"));
     const iframe = page.match(/<iframe[^>]+src="([^"]+)"/);
     assert.ok(iframe, "Novo cruzamento deve ter mapa com marcador.");
     const map = new URL(iframe[1].replaceAll("&amp;", "&"));
@@ -108,8 +108,19 @@ try {
   for (const code of ["C01", "C04"]) {
     assert.equal(updated.find((crossing) => crossing.code === code).metadata, undefined);
     const page = await (await fetch(`${base}/cruzamentos/${code}`)).text();
-    assert.ok(!page.includes("<iframe"), "Não acrescentar marcador a C01/C04.");
-    assert.ok(page.includes(">Sem o Farol Amigo</button>"));
+    const iframe = page.match(/<iframe[^>]+src="([^"]+)"/);
+    assert.ok(iframe, "C01/C04 devem mostrar o mapa do cruzamento.");
+    const embed = new URL(iframe[1].replaceAll("&amp;", "&"));
+    const address = updated.find((crossing) => crossing.code === code).address;
+    assert.equal(embed.hostname, "www.openstreetmap.org");
+    const point = embed.searchParams.get("marker").split(",").map(Number);
+    assert.equal(point.length, 2);
+    assert.ok(point[0] < -23.56 && point[0] > -23.57);
+    assert.ok(point[1] < -46.64 && point[1] > -46.66);
+    assert.ok(page.includes(address));
+    assert.ok(page.includes("Abrir localização no mapa"));
+    assert.ok(!page.includes("Largura medida no Google Earth"), "Localização não deve inventar metadados de medição.");
+    assert.ok(page.includes("Quem vai atravessar?"));
   }
   assert.equal(updated.find((crossing) => crossing.code === "C01").currentSeconds, 20);
   assert.equal(updated.find((crossing) => crossing.code === "C04").currentSeconds, 24);

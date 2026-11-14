@@ -1,3 +1,4 @@
+import { perfilValido } from "@/lib/regras";
 ﻿import "server-only";
 import { createHmac } from "node:crypto";
 import { isValidProtocol, normalizeProtocol, PROTOCOL_ALPHABET, validateReviewDraft, type ReviewReason } from "@/lib/reviewRequests";
@@ -19,6 +20,7 @@ function parseReviewEntity(value: unknown, crossings: readonly Crossing[] = []):
   if (typeof entity.protocolo !== "string" || !isValidProtocol(entity.protocolo)
     || entity.id !== requestId(entity.protocolo) || entity.type !== requestType()
     || typeof entity.cruzamento_id !== "string" || !/^[a-zA-Z0-9_-]{1,40}$/.test(entity.cruzamento_id)
+    || (entity.perfil !== undefined && !perfilValido(entity.perfil))
     || typeof entity.motivo !== "string" || typeof entity.comentario !== "string"
     || validateReviewDraft(entity.motivo, entity.comentario).reason || validateReviewDraft(entity.motivo, entity.comentario).comment
     || typeof entity.status !== "string" || !["enviado", "em_analise", "respondido"].includes(entity.status)
@@ -28,7 +30,7 @@ function parseReviewEntity(value: unknown, crossings: readonly Crossing[] = []):
   return {
     protocol: entity.protocolo, crossingCode: entity.cruzamento_id,
     address: crossings.find((crossing) => crossing.code === entity.cruzamento_id)?.address ?? `Cruzamento ${entity.cruzamento_id} (endereço não disponível)`,
-    reason: entity.motivo as ReviewReason, comment: entity.comentario,
+    perfil: perfilValido(entity.perfil) ? entity.perfil : "outro", reason: entity.motivo as ReviewReason, comment: entity.comentario,
     status: entity.status as ReviewRequestDetails["status"], response: entity.resposta,
     createdAt: entity.criado_em, updatedAt: entity.atualizado_em,
   };
@@ -61,12 +63,13 @@ export async function listReviewRequests(limit: number, offset: number) {
 function parseDraft(value: unknown): ReviewRequestDraft {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new OrionError("Informe os dados do pedido.", 400);
   const data = value as Record<string, unknown>;
-  if (Object.keys(data).some((key) => !["crossingCode", "reason", "comment"].includes(key))) throw new OrionError("O pedido contém campos desconhecidos.", 400);
+  if (Object.keys(data).some((key) => !["crossingCode", "reason", "perfil", "comment"].includes(key))) throw new OrionError("O pedido contém campos desconhecidos.", 400);
+  if (!perfilValido(data.perfil)) throw new OrionError("Escolha quem vai atravessar: pessoa idosa, pessoa com deficiência ou prefiro não dizer.", 400);
   const comment = data.comment === undefined ? "" : data.comment;
   if (typeof data.crossingCode !== "string" || !/^[a-zA-Z0-9_-]{1,40}$/.test(data.crossingCode) || typeof data.reason !== "string" || typeof comment !== "string") throw new OrionError("Os dados do pedido são inválidos.", 400);
   const errors = validateReviewDraft(data.reason, comment);
   if (errors.reason || errors.comment) throw new OrionError(errors.reason || errors.comment || "Dados inválidos.", 400);
-  return { crossingCode: data.crossingCode.toUpperCase(), reason: data.reason as ReviewReason, comment: comment.trim() };
+  return { perfil: data.perfil, crossingCode: data.crossingCode.toUpperCase(), reason: data.reason as ReviewReason, comment: comment.trim() };
 }
 
 // O HMAC gera oito símbolos criptograficamente pseudoaleatórios no servidor.
@@ -91,13 +94,13 @@ export async function createReviewRequest(value: unknown, requestKey: string | n
     await orionRequest("v2/entities", new URLSearchParams(), { method: "POST", body: {
       id: requestId(protocol), type: requestType(), protocolo: { type: "Text", value: protocol },
       cruzamento_id: { type: "Text", value: crossing.code }, motivo: { type: "Text", value: draft.reason },
-      comentario: { type: "Text", value: draft.comment }, status: { type: "Text", value: "enviado" }, resposta: { type: "Text", value: "" },
+      perfil: { type: "Text", value: draft.perfil }, comentario: { type: "Text", value: draft.comment }, status: { type: "Text", value: "enviado" }, resposta: { type: "Text", value: "" },
       criado_em: { type: "DateTime", value: now }, atualizado_em: { type: "DateTime", value: now },
     } });
   } catch (error) {
     if (!(error instanceof OrionError) || error.status !== 409) throw error;
     const existing = parseReviewEntity(await findReviewEntity(protocol));
-    if (existing.crossingCode !== crossing.code || existing.reason !== draft.reason || existing.comment !== draft.comment || existing.status !== "enviado") throw new OrionError("Este envio já foi registrado com outros dados ou andamento. Consulte o protocolo; para um novo pedido, altere as informações.", 409);
+    if (existing.crossingCode !== crossing.code || existing.perfil !== draft.perfil || existing.reason !== draft.reason || existing.comment !== draft.comment || existing.status !== "enviado") throw new OrionError("Este envio já foi registrado com outros dados ou andamento. Consulte o protocolo; para um novo pedido, altere as informações.", 409);
     return { request: { protocol, crossingCode: existing.crossingCode, status: "enviado", createdAt: existing.createdAt } satisfies CreatedReviewRequest, replayed: true };
   }
   const persisted = parseReviewEntity(await findReviewEntity(protocol));
@@ -109,14 +112,16 @@ export async function updateReviewRequest(protocol: string, value: unknown): Pro
   if (existing.status === "respondido") throw new OrionError("Este pedido já foi respondido e não pode mais ser editado.", 409);
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new OrionError("Informe o motivo ou o comentário para editar.", 400);
   const fields = value as Record<string, unknown>;
-  if (!Object.keys(fields).length || Object.keys(fields).some((key) => !["reason", "comment"].includes(key))) throw new OrionError("Somente motivo e comentário podem ser editados.", 400);
+  if (!Object.keys(fields).length || Object.keys(fields).some((key) => !["reason", "perfil", "comment"].includes(key))) throw new OrionError("Somente motivo, perfil e comentário podem ser editados.", 400);
+  const perfil = fields.perfil === undefined ? existing.perfil : fields.perfil;
+  if (!perfilValido(perfil)) throw new OrionError("Escolha um perfil válido.", 400);
   const reason = fields.reason === undefined ? existing.reason : fields.reason;
   const comment = fields.comment === undefined ? existing.comment : fields.comment;
   if (typeof reason !== "string" || typeof comment !== "string") throw new OrionError("O motivo e o comentário devem ser textos.", 400);
   const errors = validateReviewDraft(reason, comment);
   if (errors.reason || errors.comment) throw new OrionError(errors.reason || errors.comment || "Dados inválidos.", 400);
-  await orionRequest(`v2/entities/${encodeURIComponent(requestId(existing.protocol))}/attrs`, new URLSearchParams({ type: requestType() }), { method: "PATCH", body: {
-    motivo: { type: "Text", value: reason }, comentario: { type: "Text", value: comment.trim() }, atualizado_em: { type: "DateTime", value: new Date().toISOString() },
+  await orionRequest(`v2/entities/${encodeURIComponent(requestId(existing.protocol))}/attrs`, new URLSearchParams({ type: requestType() }), { method: "POST", body: {
+    perfil: { type: "Text", value: perfil }, motivo: { type: "Text", value: reason }, comentario: { type: "Text", value: comment.trim() }, atualizado_em: { type: "DateTime", value: new Date().toISOString() },
   } });
   return findReviewRequest(existing.protocol);
 }

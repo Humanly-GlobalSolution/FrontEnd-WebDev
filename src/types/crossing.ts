@@ -1,12 +1,16 @@
-export type CrossingMetadata = {
+export type CrossingLocationData = {
+  latitude: number;
+  longitude: number;
+  locationSource: string;
+  locationSourceLabel?: string;
+  locationNote?: string;
+};
+
+export type CrossingMetadata = CrossingLocationData & {
   widthSource: "Google Earth";
   timingSource: "estimated";
   greenSeconds: number;
   flashingSeconds: number;
-  latitude: number;
-  longitude: number;
-  locationSource: string;
-  locationNote?: string;
 };
 
 export type Crossing = {

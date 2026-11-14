@@ -1,9 +1,9 @@
 export const SIGNAL_LABELS = {
-  VERDE_CARROS: "Verde para carros",
-  PEDIDO: "Travessia solicitada",
-  VERDE_PEDESTRE: "Verde para pedestres",
+  VERDE_CARROS: "Verde dos carros",
+  PEDIDO: "Pedido",
+  VERDE_PEDESTRE: "Verde do pedestre",
   TEMPO_ESTENDIDO: "Tempo estendido",
-  FALHA: "Falha no sensor",
+  FALHA: "Falha",
 } as const;
 
 export const MAX_RESPONSE_LENGTH = 2000;

@@ -1,3 +1,4 @@
+import { PASSO_EXTENSAO_S, TETO_EXTENSAO_S } from "@/lib/regras";
 import "server-only";
 import { getCrossingsSource, listCrossingEntitiesServer } from "@/services/crossings.server";
 import { OrionError } from "@/services/orion.server";
@@ -12,7 +13,7 @@ export async function listOperatorCrossings(): Promise<OperatorCrossing[]> {
     const extension = entity.extensao_s;
     const valid = entity.leitura_valida;
     const validState = typeof state === "string" && Object.hasOwn(SIGNAL_LABELS, state);
-    const validExtension = typeof extension === "number" && Number.isInteger(extension) && extension >= 0 && extension <= 15 && extension % 3 === 0;
+    const validExtension = typeof extension === "number" && Number.isInteger(extension) && extension >= 0 && extension <= TETO_EXTENSAO_S && extension % PASSO_EXTENSAO_S === 0;
     return {
       ...crossing,
       signalState: validState ? state as SignalState : null,

@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { calculateCrossingSeconds, compareCrossing } from "../src/lib/crossings.ts";
-import { crossingCatalog, getCrossingMetadata } from "../src/data/crossingCatalog.ts";
+import { crossingCatalog, getCrossingMetadata, getCrossingLocation } from "../src/data/crossingCatalog.ts";
 const cases = [
- {code:'C01',width:30,current:20,guarantee:40,button:[26,40,52]},
- {code:'C02',width:27.4,current:35,guarantee:37,button:[35,38,47]},
+ {code:'C01',width:30,current:20,guarantee:40,button:[26,40,50]},
+ {code:'C02',width:27.4,current:35,guarantee:37,button:[35,37,46]},
  {code:'C03',width:36.96,current:47,guarantee:50,button:[47,50,62]},
- {code:'C04',width:19.5,current:24,guarantee:26,button:[24,27,33]},
- {code:'C05',width:27.82,current:36,guarantee:38,button:[36,39,48]},
+ {code:'C04',width:19.5,current:24,guarantee:26,button:[24,26,33]},
+ {code:'C05',width:27.82,current:36,guarantee:38,button:[36,38,47]},
 ];
 for(const row of cases) test(row.code + ': same times for all activation methods',()=>{
  assert.equal(calculateCrossingSeconds(row.width),row.guarantee);
@@ -19,7 +19,7 @@ for(const row of cases) test(row.code + ': same times for all activation methods
    assert.equal(before.alert,false);
    assert.equal(after.seconds,row.button[i]);
    assert.deepEqual(after,compareCrossing(row.width,row.current,true,profile,'button',row.code));
-   assert.equal(after.guaranteedSeconds,row.code==='C01' && profile!=='adult' ? 40 : row.current);
+   assert.equal(after.guaranteedSeconds,profile === 'adult' ? row.current : row.button[i]);
    assert.equal(after.alert,false);
    assert.ok(after.extraSeconds<=15 && after.extraSeconds%3===0);
   }
@@ -53,11 +53,11 @@ test('No extra time when sufficient; card never reduces current total',()=>{
  const r=compareCrossing(3,60,true,'reducedMobility','card');
  assert.equal(r.extraSeconds,0);assert.equal(r.seconds,60);assert.equal(r.alert,false);
 });
-test('Exactly 15 seconds can finish without alert; insufficiency raises alert',()=>{
+test('Card guarantee precedes sensor extension',()=>{
  const exact=compareCrossing(36,45,true,'reducedMobility','button');
- assert.equal(exact.extraSeconds,15);assert.equal(exact.alert,false);
+ assert.equal(exact.extraSeconds,0);assert.equal(exact.alert,false);
  const short=compareCrossing(60,24,true,'elderly','sensor');
- assert.equal(short.seconds,39);assert.equal(short.alert,true);assert.equal(short.referenceRemaining,30.75);
+ assert.equal(short.seconds,80);assert.equal(short.alert,false);assert.equal(short.referenceRemaining,0);
 });
 test('Validate calculation inputs',()=>{
  for(const value of [0,-1,NaN,Infinity]){
@@ -70,10 +70,10 @@ test('Validate calculation inputs',()=>{
 
 test('C01 accessible guarantee completes elderly and PcD crossing for all activations',()=>{
  for(const activation of ['button','sensor','card']) {
-  for(const [profile,total] of [['elderly',40],['reducedMobility',52]]) {
+  for(const [profile,total] of [['elderly',40],['reducedMobility',50]]) {
    const result=compareCrossing(30,20,true,profile,activation,'C01');
    assert.equal(result.seconds,total);
-   assert.equal(result.guaranteedSeconds,40);
+   assert.equal(result.guaranteedSeconds,total);
    assert.equal(result.referenceRemaining,0);
    assert.equal(result.alert,false);
    assert.ok(result.extraSeconds<=15 && result.extraSeconds%3===0);
@@ -81,4 +81,22 @@ test('C01 accessible guarantee completes elderly and PcD crossing for all activa
   }
   assert.equal(compareCrossing(30,20,true,'adult',activation,'C01').seconds,26);
  }
+});
+
+
+test('C01/C04 têm localização independente de dados de medição', () => {
+  for (const [code,address,latitude,longitude] of [
+    ['C01','Av. Paulista x Al. Joaquim Eugênio de Lima',-23.56607709246,-46.650806798903],
+    ['C04','Av. Paulista x Av. Brigadeiro Luís Antônio',-23.567577117853,-46.648982058581],
+  ]) {
+    const crossing={id:'urn:ngsi-ld:Cruzamento:'+code,code,address,width:30,currentSeconds:20};
+    const before=structuredClone(crossing);
+    const location=getCrossingLocation(crossing);
+    assert.equal(location.latitude,latitude);assert.equal(location.longitude,longitude);
+    assert.equal(location.widthSource,undefined);assert.equal(location.timingSource,undefined);
+    assert.equal(getCrossingMetadata(crossing),undefined);
+    assert.deepEqual(crossing,before);
+    assert.deepEqual(getCrossingLocation({...crossing,currentSeconds:60}),location);
+    assert.equal(getCrossingLocation({...crossing,address:'Outro cruzamento'}),undefined);
+  }
 });

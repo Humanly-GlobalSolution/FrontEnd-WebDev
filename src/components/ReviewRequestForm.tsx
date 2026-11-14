@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import { ProfileChoice } from "@/components/ProfileChoice";
+import { PERFIS, type Perfil } from "@/lib/regras";
 import { Button } from "@/components/Button";
 import { ReasonOption } from "@/components/ReasonOption";
 import { RequestProgress } from "@/components/RequestProgress";
@@ -8,7 +10,8 @@ import { RequestConfirmation } from "@/components/RequestConfirmation";
 import { usePedido } from "@/hooks/usePedido";
 import { MAX_COMMENT_LENGTH, REVIEW_REASONS, validateReviewDraft, type ReviewReason } from "@/lib/reviewRequests";
 
-export function ReviewRequestForm({ code, address, canSend }: { code: string; address: string; canSend: boolean }) {
+export function ReviewRequestForm({ code, address, canSend, initialProfile = "idoso" }: { code: string; address: string; canSend: boolean; initialProfile?: Perfil }) {
+  const [perfil, setPerfil] = useState<Perfil>(initialProfile);
   const [reason, setReason] = useState<ReviewReason | "">("");
   const [comment, setComment] = useState("");
   const [attempted, setAttempted] = useState(false);
@@ -44,7 +47,7 @@ export function ReviewRequestForm({ code, address, canSend }: { code: string; ad
 
   async function send() {
     if (!reason || !canSend) return;
-    const result = await create({ crossingCode: code, reason, comment });
+    const result = await create({ crossingCode: code, reason, perfil, comment });
     if (result) requestAnimationFrame(() => confirmationHeading.current?.focus());
   }
 
@@ -57,6 +60,7 @@ export function ReviewRequestForm({ code, address, canSend }: { code: string; ad
       {step === 1 ? (
         <form onSubmit={review} noValidate>
           <h1 ref={formHeading} tabIndex={-1}>O que acontece neste farol?</h1>
+          <ProfileChoice value={perfil} onChange={setPerfil} optional disabled={loading} />
           <fieldset ref={reasonGroup} className="reason-group" role="radiogroup" aria-invalid={attempted && Boolean(errors.reason) || undefined} aria-describedby={attempted && errors.reason ? "reason-error" : undefined}>
             <legend>Escolha um motivo (obrigatório)</legend>
             <div className="reason-options">
@@ -78,10 +82,11 @@ export function ReviewRequestForm({ code, address, canSend }: { code: string; ad
           <h1 ref={reviewHeading} tabIndex={-1} id="review-title">Confira seu pedido</h1>
           <dl className="request-review">
             <div><dt>Cruzamento</dt><dd>{code} · {address}</dd></div>
+            <div><dt>Quem vai atravessar</dt><dd>{PERFIS[perfil]}</dd></div>
             <div><dt>O que acontece</dt><dd>{REVIEW_REASONS.find((item) => item.value === reason)?.label}</dd></div>
             <div><dt>Seu comentário</dt><dd>{comment.trim() || "Nenhum comentário informado."}</dd></div>
           </dl>
-          <p className="demo-notice">{canSend ? "Confira as informações antes de enviar. O protocolo será gerado após a gravação no Farol Amigo." : "Modo demonstração: nenhum pedido será gravado. Ative a conexão com o Orion para enviar."}</p>
+          <p className="demo-notice">{canSend ? "Confira as informações antes de enviar. O protocolo será gerado após a gravação no Farol Amigo." : "Você está vendo uma demonstração. Para enviar um pedido, use a versão conectada do Farol Amigo."}</p>
           {error ? <p className="field-error request-error" role="alert">{error} Seus dados continuam nesta página.</p> : null}
           <div className="request-actions">
             <Button variant="secondary" onClick={edit} disabled={loading}>Alterar informações</Button>

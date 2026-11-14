@@ -106,6 +106,7 @@ h2 { max-width: 30ch; font-size: 1.65rem; font-weight: 700; line-height: 1.25; t
 .comparison-switch button[aria-pressed="true"] { background: var(--color-asphalt); color: white; }
 .comparison-panel { padding: 1.5rem; border-radius: 1rem; background: #282e35; color: white; }
 .comparison-panel h2 { max-width: none; font-size: 1.125rem; line-height: 1.5; }
+.comparison-added { margin-top: 1rem; font-weight: 700; }
 .crossing-road { position: relative; height: 10rem; margin-top: 1.25rem; overflow: hidden; border-inline: 0.75rem solid #cbd0d6; border-radius: 1rem; background: #3b434d; }
 .zebra-stripes { position: absolute; inset: 1.8rem 0.25rem; display: flex; gap: 0.45rem; }
 .zebra-stripes span { flex: 1; background: white; }
@@ -311,3 +312,9 @@ h2 { max-width: 30ch; font-size: 1.65rem; font-weight: 700; line-height: 1.25; t
 @media (forced-colors: active) {
   .signal-state, .operator-nav, .operator-crossing, .operator-answer { border: 1px solid CanvasText; }
 }
+
+.profile-choice { margin-block: 1.5rem; border: 0; padding: 0; }
+.profile-choice legend { font-weight: 700; margin-bottom: .75rem; }
+.profile-choice label { display: flex; align-items: center; gap: .75rem; min-height: 48px; padding: .5rem .75rem; cursor: pointer; }
+.profile-choice input { width: 22px; height: 22px; accent-color: #154734; }
+.profile-choice label:focus-within { outline: 3px solid #154734; outline-offset: 2px; border-radius: 6px; }

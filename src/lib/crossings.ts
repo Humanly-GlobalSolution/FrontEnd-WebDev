@@ -1,17 +1,18 @@
+import { CARTOES, PASSO_EXTENSAO_S, TETO_EXTENSAO_S, tempoNecessario, tempoGarantido, ondeParaNoFimDoVerde } from "./regras.ts";
 import type { Crossing } from "../types/crossing";
 
-export const REFERENCE_WALKING_SPEED = 0.75;
-export const EXTENSION_STEP_SECONDS = 3;
-export const MAX_EXTENSION_SECONDS = 15;
+export const REFERENCE_WALKING_SPEED = CARTOES.senior.ritmo;
+export const EXTENSION_STEP_SECONDS = PASSO_EXTENSAO_S;
+export const MAX_EXTENSION_SECONDS = TETO_EXTENSAO_S;
 
 export function calculateCrossingSeconds(width: number): number {
   if (!Number.isFinite(width) || width <= 0) {
     throw new RangeError("A largura da travessia deve ser um número positivo.");
   }
-  return Math.ceil(width / REFERENCE_WALKING_SPEED);
+  return tempoNecessario(width, REFERENCE_WALKING_SPEED);
 }
 
-export const WALKING_SPEEDS = { adult: 1.2, elderly: 0.75, reducedMobility: 0.6 } as const;
+export const WALKING_SPEEDS = { adult: 1.2, elderly: CARTOES.senior.ritmo, reducedMobility: CARTOES.especial.ritmo } as const;
 export type WalkingProfile = keyof typeof WALKING_SPEEDS;
 export type CrossingActivation = "button" | "sensor" | "card";
 
@@ -22,18 +23,16 @@ export function compareCrossing(width: number, currentSeconds: number, extended:
   }
   if (!Object.hasOwn(WALKING_SPEEDS, profile) || !["button", "sensor", "card"].includes(activation)) throw new RangeError("Perfil ou acionamento inválido.");
   const speed = WALKING_SPEEDS[profile];
-  const requiredSeconds = width / speed;
-  // Os três acionamentos usam a mesma base, conforme ajuste solicitado pela equipe.
-  // No piloto C01, os perfis idoso/PcD partem de uma garantia acessível.
-  // Essa garantia não integra o teto de 15 s da extensão por presença.
-  const accessiblePilot = code?.toUpperCase() === "C01" && profile !== "adult";
-  const guaranteedSeconds = accessiblePilot ? Math.max(currentSeconds, referenceSeconds) : currentSeconds;
+  const requiredSeconds = tempoNecessario(width, speed);
+  // A garantia do cartão vale em todos os cruzamentos; a extensão é separada.
+  void code; // Mantém compatibilidade com os consumidores existentes.
+  const guaranteedSeconds = profile === "adult" ? currentSeconds : tempoGarantido(width, currentSeconds, profile === "elderly" ? "senior" : "especial");
   const missingSeconds = Math.max(0, requiredSeconds - guaranteedSeconds);
   const extraSeconds = Math.min(MAX_EXTENSION_SECONDS, Math.ceil(missingSeconds / EXTENSION_STEP_SECONDS) * EXTENSION_STEP_SECONDS);
   const proposedSeconds = guaranteedSeconds + extraSeconds;
   const seconds = extended ? proposedSeconds : currentSeconds;
-  const adultDistance = Math.min(width, seconds * 1.2);
-  const referenceDistance = Math.min(width, seconds * speed);
+  const adultDistance = ondeParaNoFimDoVerde(width, seconds, 1.2);
+  const referenceDistance = ondeParaNoFimDoVerde(width, seconds, speed);
 
   return {
     seconds,

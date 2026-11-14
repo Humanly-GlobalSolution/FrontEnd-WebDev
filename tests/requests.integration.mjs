@@ -33,6 +33,7 @@ const broker = createServer(async (request, response) => {
     }
     if (request.method === "DELETE") {
       if (!current) return send(404);
+      if (parts[3] === "attrs") { delete current[parts[4]]; return send(204); }
       entities.delete(id);
       return send(204);
     }

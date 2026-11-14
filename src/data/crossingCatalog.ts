@@ -1,4 +1,4 @@
-import type { Crossing, CrossingMetadata } from "@/types/crossing";
+import type { Crossing, CrossingMetadata, CrossingLocationData } from "@/types/crossing";
 
 // Larguras fornecidas por Eduardo, medidas no Google Earth. Tempos estimados.
 // Coordenadas de referência verificadas nos nós públicos do OpenStreetMap.
@@ -47,4 +47,33 @@ export function getCrossingMetadata(crossing: Crossing): CrossingMetadata | unde
     || Math.abs(crossing.width - expected.width) > 0.000001
     || crossing.currentSeconds !== expected.currentSeconds) return;
   return { ...expected.metadata };
+}
+
+
+// Interseções confirmadas em 14/11/2026: ArcGIS, StreetInt, score 100.
+// Localização independente das fontes de largura e tempo.
+const additionalCrossingLocations = {
+  C01: {
+    "address": "Av. Paulista x Al. Joaquim Eugênio de Lima",
+    "latitude": -23.56607709246,
+    "longitude": -46.650806798903,
+    "locationSource": "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=Avenida+Paulista+%26+Alameda+Joaquim+Eug%C3%AAnio+de+Lima%2C+Bela+Vista%2C+S%C3%A3o+Paulo%2C+01310-100&f=pjson&outFields=Match_addr%2CAddr_type",
+    "locationSourceLabel": "ArcGIS World Geocoding Service"
+  },
+  C04: {
+    "address": "Av. Paulista x Av. Brigadeiro Luís Antônio",
+    "latitude": -23.567577117853,
+    "longitude": -46.648982058581,
+    "locationSource": "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=Avenida+Paulista+%26+Avenida+Brigadeiro+Lu%C3%ADs+Ant%C3%B4nio%2C+Bela+Vista%2C+S%C3%A3o+Paulo%2C+01310&f=pjson&outFields=Match_addr%2CAddr_type",
+    "locationSourceLabel": "ArcGIS World Geocoding Service"
+  }
+} satisfies Record<"C01" | "C04", CrossingLocationData & { address: string }>;
+
+export function getCrossingLocation(crossing: Crossing): CrossingLocationData | undefined {
+  if (crossing.metadata) return crossing.metadata;
+  const code = crossing.code.toUpperCase();
+  if (!Object.hasOwn(additionalCrossingLocations, code)) return;
+  const location = additionalCrossingLocations[code as keyof typeof additionalCrossingLocations];
+  if (normalizedAddress(crossing.address) !== normalizedAddress(location.address)) return;
+  return { ...location };
 }

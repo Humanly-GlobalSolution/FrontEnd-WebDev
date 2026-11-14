@@ -13,7 +13,7 @@ export function CrossingSearch() {
     <section className="site-width crossing-search" aria-labelledby="search-title">
       <TextField name="cruzamento" autoComplete="off" label="Onde fica o farol?" type="search" placeholder="Rua ou código do poste" hint="Ex.: Paulista ou C01. A busca não usa sua localização." value={query} onChange={(event) => setQuery(event.target.value)} aria-controls="crossing-results" />
       <h2 id="search-title">{query.trim() ? "Resultado da busca" : source === "demo" ? "Cruzamentos de exemplo" : "Cruzamentos"}</h2>
-      {source === "demo" ? <p className="demo-notice">Modo de demonstração. As fontes das medidas e os tempos estimados estão identificados em cada cruzamento. Sem dados ao vivo da CET.</p> : source === "orion" ? <p className="demo-notice">Dados consultados no FIWARE Orion do projeto. Não representam autorização para atravessar.</p> : null}
+      {source === "demo" ? <p className="demo-notice">Modo de demonstração. As fontes das medidas e os tempos estimados estão identificados em cada cruzamento. Sem dados ao vivo da CET.</p> : source === "orion" ? <p className="demo-notice">Informações do cadastro do Farol Amigo. Ao atravessar, observe a sinalização da via.</p> : null}
       <p className="search-feedback" role="status">
         {loading ? "Carregando cruzamentos…" : error ? "Não foi possível carregar a lista." : `${crossings.length} ${crossings.length === 1 ? "cruzamento encontrado" : "cruzamentos encontrados"}.`}
       </p>
