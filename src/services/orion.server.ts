@@ -8,7 +8,7 @@ export class OrionError extends Error {
 }
 
 export async function orionRequest(path: string, query: URLSearchParams = new URLSearchParams(), init: { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: unknown } = {}): Promise<unknown> {
-  const base = process.env.ORION_BASE_URL;
+  const base = process.env.ORION_URL ?? process.env.ORION_BASE_URL;
   if (!base) throw new OrionError("O endereço do Orion ainda não foi configurado no servidor.", 503);
 
   let url: URL;
@@ -22,8 +22,8 @@ export async function orionRequest(path: string, query: URLSearchParams = new UR
 
   const headers = new Headers({ Accept: "application/json" });
   if (init.body !== undefined) headers.set("Content-Type", "application/json");
-  if (process.env.ORION_FIWARE_SERVICE) headers.set("Fiware-Service", process.env.ORION_FIWARE_SERVICE);
-  if (process.env.ORION_FIWARE_SERVICEPATH) headers.set("Fiware-ServicePath", process.env.ORION_FIWARE_SERVICEPATH);
+  headers.set("Fiware-Service", process.env.ORION_FIWARE_SERVICE || "farolamigo");
+  headers.set("Fiware-ServicePath", process.env.ORION_FIWARE_SERVICEPATH || "/");
   if (process.env.ORION_AUTH_TOKEN) headers.set("Authorization", `Bearer ${process.env.ORION_AUTH_TOKEN}`);
 
   let response: Response;

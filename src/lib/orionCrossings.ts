@@ -1,4 +1,5 @@
 import type { Crossing } from "../types/crossing";
+import { getCrossingMetadata } from "@/data/crossingCatalog";
 
 export type OrionAttributeMapping = { code: string; address: string; width: string; time: string };
 
@@ -22,5 +23,7 @@ export function parseOrionCrossing(value: unknown, mapping: OrionAttributeMappin
     || typeof currentSeconds !== "number" || !Number.isFinite(currentSeconds) || currentSeconds <= 0) {
     throw new Error("A entidade não corresponde ao contrato de cruzamento.");
   }
-  return { id: entity.id, code, address: address.trim(), width, currentSeconds };
+  const crossing = { id: entity.id, code, address: address.trim(), width, currentSeconds, simulated: entity.simulated === true || code.toUpperCase() !== "C01" };
+  const metadata = getCrossingMetadata(crossing);
+  return metadata ? { ...crossing, metadata } : crossing;
 }

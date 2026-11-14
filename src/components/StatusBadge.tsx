@@ -1,8 +1,4 @@
 const statusLabels = {
-  normal: "Normal",
-  extended: "Estendido",
-  alert: "Alerta",
-  maintenance: "Em manutenção",
   sent: "Enviado",
   reviewing: "Em análise",
   answered: "Respondido",

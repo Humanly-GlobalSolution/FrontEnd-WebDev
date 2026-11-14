@@ -9,7 +9,7 @@ import { RequestEditForm } from "@/components/RequestEditForm";
 import { CancelRequestDialog } from "@/components/CancelRequestDialog";
 import type { ReviewRequestEdit } from "@/types/reviewRequest";
 import { usePedido } from "@/hooks/usePedido";
-import { normalizeProtocol, requestKeyFromProtocol, REVIEW_REASONS } from "@/lib/reviewRequests";
+import { normalizeProtocol, isValidProtocol, REVIEW_REASONS } from "@/lib/reviewRequests";
 
 export function RequestLookup({ initialProtocol }: { initialProtocol: string }) {
   const [protocol, setProtocol] = useState(initialProtocol);
@@ -29,8 +29,8 @@ export function RequestLookup({ initialProtocol }: { initialProtocol: string }) 
     setNotice(null);
     const normalized = normalizeProtocol(protocol);
     setProtocol(normalized);
-    if (!requestKeyFromProtocol(normalized)) {
-      setValidation("Copie o protocolo completo que começa com FA, incluindo os números e as letras.");
+    if (!isValidProtocol(normalized)) {
+      setValidation("Copie o protocolo completo no formato FA-XXXX-XXXX.");
       requestAnimationFrame(() => protocolInput.current?.focus());
       return;
     }
@@ -75,7 +75,7 @@ export function RequestLookup({ initialProtocol }: { initialProtocol: string }) 
     <div className="request-lookup">
       <h1>Seu pedido</h1>
       <form onSubmit={submit} className="protocol-search" noValidate>
-        <TextField inputRef={protocolInput} name="protocolo" label="Número do protocolo" value={protocol} onChange={(event) => { setProtocol(event.target.value); setValidation(undefined); }} placeholder="FA-AAMM-…" hint="Cole o protocolo inteiro. Você não precisa informar seu nome." error={validation} disabled={loading || editing || canceling} autoComplete="off" autoCapitalize="characters" spellCheck={false} required maxLength={40} />
+        <TextField inputRef={protocolInput} name="protocolo" label="Número do protocolo" value={protocol} onChange={(event) => { setProtocol(event.target.value); setValidation(undefined); }} placeholder="FA-ABCD-2345" hint="Cole o protocolo inteiro. Você não precisa informar seu nome." error={validation} disabled={loading || editing || canceling} autoComplete="off" autoCapitalize="characters" spellCheck={false} required maxLength={12} />
         <Button type="submit" loading={loading && !editing && !canceling} disabled={editing || canceling}>Consultar pedido</Button>
       </form>
       {loading && !editing && !canceling ? <p role="status" className="lookup-feedback">Consultando o pedido…</p> : null}
@@ -94,6 +94,7 @@ export function RequestLookup({ initialProtocol }: { initialProtocol: string }) 
               <div><dt>Cruzamento</dt><dd>{foundRequest.crossingCode} · {foundRequest.address}</dd></div>
               <div><dt>O que acontece</dt><dd>{REVIEW_REASONS.find((item) => item.value === foundRequest.reason)?.label}</dd></div>
               <div><dt>Seu comentário</dt><dd>{foundRequest.comment || "Nenhum comentário informado."}</dd></div>
+              <div><dt>Última atualização do pedido</dt><dd><time dateTime={foundRequest.updatedAt}>{new Date(foundRequest.updatedAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</time></dd></div>
             </dl>
           </section>
           {foundRequest.status === "respondido" ? <section className="request-section" aria-labelledby="response-title"><h2 id="response-title">Resposta</h2><p className="request-response">{foundRequest.response || "O pedido está marcado como respondido, mas o texto da resposta ainda não foi informado no Orion."}</p></section> : null}

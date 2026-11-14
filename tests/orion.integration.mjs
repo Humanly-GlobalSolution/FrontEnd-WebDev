@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { once } from "node:events";
+import { crossingCatalog } from "../src/data/crossingCatalog.ts";
 
 // Executar após npm run build. Usa somente um Orion simulado local e processos próprios.
 let scenario = "valid";
@@ -18,6 +19,14 @@ const broker = createServer((request, response) => {
   if (scenario === "invalid") { response.end(JSON.stringify([{ ...entity(1), largura: 0 }])); return; }
   if (scenario === "duplicate") { response.end(JSON.stringify([entity(1), entity(1)])); return; }
   if (scenario === "empty") { response.end("[]"); return; }
+  if (scenario === "updated") {
+    response.end(JSON.stringify([
+      { ...entity(1), id: "urn:ngsi-ld:Cruzamento:C01", codigo: "C01" },
+      ...Object.values(crossingCatalog).map((crossing) => ({ id: crossing.id, type: "Cruzamento", codigo: crossing.code, endereco: crossing.address, largura: crossing.width, tempoAtual: crossing.currentSeconds })),
+      { ...entity(4), id: "urn:ngsi-ld:Cruzamento:C04", codigo: "C04", endereco: "Av. Paulista x Av. Brigadeiro Luís Antônio", largura: 19.5, tempoAtual: 24 },
+    ]));
+    return;
+  }
   if (scenario === "paginated") {
     const offset = Number(url.searchParams.get("offset"));
     response.end(JSON.stringify(Array.from({ length: offset === 0 ? 100 : 1 }, (_, index) => entity(offset + index + 1))));
@@ -37,7 +46,7 @@ await new Promise((resolve) => portProbe.close(resolve));
 const base = `http://127.0.0.1:${port}`;
 const child = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", String(port)], {
   cwd: process.cwd(), windowsHide: true, stdio: ["ignore", "pipe", "pipe"],
-  env: { ...process.env, CROSSINGS_SOURCE: "orion", ORION_BASE_URL: `http://127.0.0.1:${broker.address().port}`, ORION_CROSSING_TYPE: "Cruzamento", ORION_CODE_ATTRIBUTE: "codigo", ORION_ADDRESS_ATTRIBUTE: "endereco", ORION_WIDTH_ATTRIBUTE: "largura", ORION_TIME_ATTRIBUTE: "tempoAtual", ORION_FIWARE_SERVICE: "test-service", ORION_FIWARE_SERVICEPATH: "/test", ORION_AUTH_TOKEN: "test-only-token" },
+  env: { ...process.env, CROSSINGS_SOURCE: "orion", ORION_URL: `http://127.0.0.1:${broker.address().port}`, ORION_BASE_URL: "http://127.0.0.1:1", ORION_CROSSING_TYPE: "Cruzamento", ORION_CODE_ATTRIBUTE: "codigo", ORION_ADDRESS_ATTRIBUTE: "endereco", ORION_WIDTH_ATTRIBUTE: "largura", ORION_TIME_ATTRIBUTE: "tempoAtual", ORION_FIWARE_SERVICE: "test-service", ORION_FIWARE_SERVICEPATH: "/test", ORION_AUTH_TOKEN: "test-only-token" },
 });
 let output = "";
 child.stdout.on("data", (chunk) => { output += chunk; });
@@ -69,6 +78,41 @@ try {
   assert.equal(detail.status, 200);
   assert.ok((await detail.text()).includes("Rua de teste 1"));
   assert.equal((await fetch(`${base}/cruzamentos/INEXISTENTE`)).status, 404);
+
+  scenario = "updated";
+  const updated = (await (await fetch(`${base}/api/cruzamentos`)).json()).crossings;
+  assert.equal(updated.length, 5);
+  assert.equal(new Set(updated.map((crossing) => crossing.code)).size, 5);
+  for (const crossing of Object.values(crossingCatalog)) {
+    const row = updated.find((item) => item.code === crossing.code);
+    assert.equal(row.address, crossing.address);
+    assert.equal(row.width, crossing.width);
+    assert.equal(row.currentSeconds, crossing.currentSeconds);
+    assert.deepEqual(row.metadata, crossing.metadata);
+    const page = await (await fetch(`${base}/cruzamentos/${crossing.code}`)).text();
+    assert.ok(page.includes(crossing.address));
+    assert.ok(page.includes("Sem o Farol Amigo"));
+    assert.ok(page.includes(`id="profile-${crossing.code}"`));
+    assert.ok(page.includes(`id="activation-${crossing.code}"`));
+    for (const value of ["adult", "elderly", "reducedMobility", "button", "sensor", "card"]) {
+      assert.ok(page.includes(`value="${value}"`));
+    }
+    assert.ok(page.includes("Google Earth"));
+    assert.ok(page.includes("Não são tempos oficiais da CET"));
+    const iframe = page.match(/<iframe[^>]+src="([^"]+)"/);
+    assert.ok(iframe, "Novo cruzamento deve ter mapa com marcador.");
+    const map = new URL(iframe[1].replaceAll("&amp;", "&"));
+    assert.equal(map.hostname, "www.openstreetmap.org");
+    assert.equal(map.searchParams.get("marker"), `${crossing.metadata.latitude},${crossing.metadata.longitude}`);
+  }
+  for (const code of ["C01", "C04"]) {
+    assert.equal(updated.find((crossing) => crossing.code === code).metadata, undefined);
+    const page = await (await fetch(`${base}/cruzamentos/${code}`)).text();
+    assert.ok(!page.includes("<iframe"), "Não acrescentar marcador a C01/C04.");
+    assert.ok(page.includes(">Sem o Farol Amigo</button>"));
+  }
+  assert.equal(updated.find((crossing) => crossing.code === "C01").currentSeconds, 20);
+  assert.equal(updated.find((crossing) => crossing.code === "C04").currentSeconds, 24);
 
   scenario = "paginated";
   const paginated = await (await fetch(`${base}/api/cruzamentos`)).json();

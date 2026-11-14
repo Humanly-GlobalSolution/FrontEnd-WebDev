@@ -1,9 +1,9 @@
 import type { ReviewRequestDetails } from "@/types/reviewRequest";
 
 const steps = [
-  { value: "enviado", label: "Enviado", date: "createdAt" },
-  { value: "em_analise", label: "Em análise", date: "reviewedAt" },
-  { value: "respondido", label: "Respondido", date: "answeredAt" },
+  { value: "enviado", label: "Enviado" },
+  { value: "em_analise", label: "Em análise" },
+  { value: "respondido", label: "Respondido" },
 ] as const;
 
 export function RequestTimeline({ request }: { request: ReviewRequestDetails }) {
@@ -13,7 +13,7 @@ export function RequestTimeline({ request }: { request: ReviewRequestDetails }) 
       <h2 id="timeline-title">Andamento</h2>
       <ol className="request-timeline">
         {steps.map((step, index) => {
-          const date = request[step.date];
+          const date = index === 0 ? request.createdAt : undefined;
           return (
           <li key={step.value} className={index <= current ? "timeline-reached" : undefined} aria-current={index === current ? "step" : undefined}>
             <span className="timeline-step-mark" aria-hidden="true">{index + 1}</span>

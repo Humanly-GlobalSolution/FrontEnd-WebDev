@@ -11,7 +11,10 @@
         "setup:local": "node scripts/setup-local.mjs",
         "test:orion:local": "node tests/orion.local.mjs",
         "test:pedidos:local": "node tests/requests.local.mjs",
-        "test:http": "node --test tests/httpClient.test.mjs"
+        "test:pedidos": "node tests/requests.integration.mjs",
+        "test:painel": "node tests/operator.integration.mjs",
+        "test:http": "node --test tests/httpClient.test.mjs tests/requestOrigin.test.mjs",
+        "test:calculo": "node --test tests/crossings.test.mjs"
     },
     "type": "module",
     "dependencies": {

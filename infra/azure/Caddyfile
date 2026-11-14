@@ -1,9 +1,0 @@
-{$ORION_DOMAIN} {
-    @unauthorized {
-        not header Authorization "Bearer {$ORION_GATEWAY_TOKEN}"
-    }
-    respond @unauthorized "Unauthorized" 401
-    reverse_proxy orion:1026 {
-        header_up -Authorization
-    }
-}

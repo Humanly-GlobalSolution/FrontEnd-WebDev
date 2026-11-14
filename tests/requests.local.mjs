@@ -5,7 +5,7 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 
 process.loadEnvFile(".env.local");
-const brokerBase = new URL(process.env.ORION_BASE_URL);
+const brokerBase = new URL(process.env.ORION_URL ?? process.env.ORION_BASE_URL);
 assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(brokerBase.hostname), "Teste permitido apenas em Orion local.");
 const brokerHeaders = {};
 if (process.env.ORION_FIWARE_SERVICE) brokerHeaders["Fiware-Service"] = process.env.ORION_FIWARE_SERVICE;
@@ -24,8 +24,8 @@ const adminHeaders = { Authorization: `Bearer ${process.env.ADMIN_API_TOKEN}`, "
 const code = `TEST_${Date.now()}`;
 const key = randomUUID();
 const type = process.env.ORION_REQUEST_TYPE || "PedidoRevisao";
-const requestId = `urn:ngsi-ld:${type}:${key}`;
-const rawUrl = new URL(`v2/entities/${encodeURIComponent(requestId)}?type=${encodeURIComponent(type)}`, `${brokerBase.href.replace(/\/$/, "")}/`);
+let requestId;
+let rawUrl;
 let crossingCreated = false;
 const cancellationRecords = [];
 const post = (body, requestKey = key, extraHeaders = {}) => fetch(`${base}/api/pedidos`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": requestKey, ...extraHeaders }, body: JSON.stringify(body) });
@@ -37,32 +37,53 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   assert.ok(ready);
+  assert.equal((await fetch(`${base}/api/pedidos`)).status, 401);
+  assert.equal((await fetch(`${base}/api/pedidos`, { headers: { Authorization: "Bearer incorreto" } })).status, 401);
+  for (const query of ["limit=0", "limit=101", "offset=-1", "offset=10001", "limit=1&limit=2", "type=Outro"]) {
+    assert.equal((await fetch(`${base}/api/pedidos?${query}`, { headers: adminHeaders })).status, 400);
+  }
   const creation = await fetch(`${base}/api/admin/cruzamentos`, { method: "POST", headers: adminHeaders, body: JSON.stringify({ code, address: "Cruzamento temporário do teste de pedidos", width: 30, currentSeconds: 20 }) });
   assert.equal(creation.status, 201, await creation.clone().text());
   crossingCreated = true;
   const crossing = (await creation.json()).crossing;
   const draft = { crossingCode: code, reason: "tempo_curto", comment: "De manhã a faixa fica cheia." };
   assert.equal((await post({ ...draft, reason: "invalido" })).status, 400);
-  assert.equal((await post({ ...draft, comment: "a".repeat(501) })).status, 400);
+  assert.equal((await post({ ...draft, reason: "equipamento" })).status, 400);
+  assert.equal((await post({ ...draft, comment: "a".repeat(281) })).status, 400);
+  for (const character of ['<', '>', '"', "'", '=', ';', '(', ')']) assert.equal((await post({ ...draft, comment: `Texto ${character} inválido` })).status, 400);
+  for (const field of ['id', 'type', 'protocolo', 'criado_em', 'atualizado_em']) assert.equal((await post({ ...draft, [field]: 'indevido' })).status, 400);
   assert.equal((await post({ ...draft, status: "respondido" })).status, 400);
   assert.equal((await post(draft, "invalid-key")).status, 400);
   assert.equal((await post({ ...draft, crossingCode: "INEXISTENTE" })).status, 404);
   assert.equal((await post(draft, key, { Origin: "https://outro.example" })).status, 403);
-  const sent = await post(draft);
+  const sent = await post(draft, key, { Origin: base });
   assert.equal(sent.status, 201, await sent.clone().text());
   const result = await sent.json();
-  assert.match(result.request.protocol, /^FA-\d{4}-[A-F0-9]{32}$/);
+  assert.match(result.request.protocol, /^FA-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
+  assert.equal(sent.headers.get("set-cookie"), null, "Acesso sem cookie, conforme decisão do projeto.");
+  requestId = `urn:ngsi-ld:${type}:${result.request.protocol}`;
+  rawUrl = new URL(`v2/entities/${encodeURIComponent(requestId)}?type=${encodeURIComponent(type)}`, `${brokerBase.href.replace(/\/$/, "")}/`);
   assert.equal(result.request.status, "enviado");
   assert.equal(result.request.crossingCode, code);
   const saved = await fetch(rawUrl, { headers: brokerHeaders });
   assert.equal(saved.status, 200);
   const entity = await saved.json();
   assert.equal(entity.protocolo.value, result.request.protocol);
-  assert.equal(entity.cruzamento.value, crossing.id);
+  assert.equal(entity.cruzamento_id.value, crossing.code);
+  assert.deepEqual(Object.keys(entity).sort(), ['id', 'type', 'protocolo', 'cruzamento_id', 'motivo', 'comentario', 'status', 'resposta', 'criado_em', 'atualizado_em'].sort());
+  assert.equal(entity.resposta.value, "");
   assert.equal(entity.motivo.value, draft.reason);
   assert.equal(entity.comentario.value, draft.comment);
   assert.equal(entity.status.value, "enviado");
-  assert.ok(!Number.isNaN(Date.parse(entity.data.value)));
+  const listing = await fetch(`${base}/api/pedidos?limit=100&offset=0`, { headers: adminHeaders });
+  assert.equal(listing.status, 200);
+  assert.equal(listing.headers.get("cache-control"), "no-store");
+  const listed = await listing.json();
+  assert.ok(listed.requests.some((request) => request.protocol === result.request.protocol));
+  assert.ok(listed.requests.every((request) => !("id" in request) && !("type" in request)));
+  assert.equal(listed.pagination.limit, 100);
+  assert.ok(!Number.isNaN(Date.parse(entity.criado_em.value)));
+  assert.ok(!Number.isNaN(Date.parse(entity.atualizado_em.value)));
   const retry = await post(draft);
   assert.equal(retry.status, 200, await retry.clone().text());
   const replayed = await retry.json();
@@ -84,7 +105,8 @@ try {
   assert.ok(!("id" in found), "Não expor o ID interno.");
   const edit = (changes, headers = {}) => fetch(lookupUrl, { method: "PATCH", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(changes) });
   assert.equal((await edit({ reason: "invalido" })).status, 400);
-  assert.equal((await edit({ comment: "a".repeat(501) })).status, 400);
+  assert.equal((await edit({ comment: "a".repeat(281) })).status, 400);
+  for (const character of ['<', '>', '"', "'", '=', ';', '(', ')']) assert.equal((await edit({ comment: character })).status, 400);
   assert.equal((await edit({ status: "respondido" })).status, 400);
   assert.equal((await edit({ crossingCode: "OUTRO" })).status, 400);
   assert.equal((await edit({})).status, 400);
@@ -101,13 +123,15 @@ try {
   const rawEdited = await (await fetch(rawUrl, { headers: brokerHeaders })).json();
   assert.equal(rawEdited.motivo.value, "falta_som");
   assert.equal(rawEdited.comentario.value, "O aviso sonoro não funciona.");
-  assert.equal(rawEdited.cruzamento.value, crossing.id);
-  assert.equal(rawEdited.data.value, entity.data.value);
+  assert.equal(rawEdited.cruzamento_id.value, crossing.code);
+  assert.equal(rawEdited.criado_em.value, entity.criado_em.value);
+  assert.ok(Date.parse(rawEdited.atualizado_em.value) >= Date.parse(entity.atualizado_em.value));
   const normalizedLookup = await fetch(`${base}/api/pedidos/${result.request.protocol.toLowerCase()}`);
   assert.equal(normalizedLookup.status, 200);
   assert.equal((await fetch(`${base}/api/pedidos/FA-INVALIDO`)).status, 400);
-  const wrongMonth = result.request.protocol.slice(0, 3) + (result.request.protocol.slice(3, 7) === "2601" ? "2602" : "2601") + result.request.protocol.slice(7);
-  assert.equal((await fetch(`${base}/api/pedidos/${wrongMonth}`)).status, 404);
+  const unknownProtocol = result.request.protocol.slice(0, -1) + (result.request.protocol.endsWith("A") ? "B" : "A");
+  assert.equal((await fetch(`${base}/api/pedidos/${unknownProtocol}`)).status, 404);
+  assert.equal((await fetch(`${base}/api/pedidos/FA-OOOO-1111`)).status, 400);
   const changeStatus = async (attributes, method = "PATCH") => {
     const changed = await fetch(`${rawUrl.origin}${rawUrl.pathname}/attrs${rawUrl.search}`, { method, headers: { ...brokerHeaders, "Content-Type": "application/json" }, body: JSON.stringify(attributes) });
     assert.equal(changed.status, 204);
@@ -123,12 +147,11 @@ try {
   assert.equal(cleared.reason, "falta_som");
   assert.equal(cleared.status, "em_analise");
   const reviewDate = new Date().toISOString();
-  await changeStatus({ status: { type: "Text", value: "respondido" }, resposta: { type: "Text", value: "Análise de teste concluída." }, dataAnalise: { type: "DateTime", value: reviewDate }, dataResposta: { type: "DateTime", value: reviewDate } }, "POST");
+  await changeStatus({ status: { type: "Text", value: "respondido" }, resposta: { type: "Text", value: "Análise de teste concluída." }, atualizado_em: { type: "DateTime", value: reviewDate } }, "POST");
   const answered = (await (await fetch(lookupUrl)).json()).request;
   assert.equal(answered.status, "respondido");
   assert.equal(answered.response, "Análise de teste concluída.");
-  assert.equal(Date.parse(answered.reviewedAt), Date.parse(reviewDate));
-  assert.equal(Date.parse(answered.answeredAt), Date.parse(reviewDate));
+  assert.equal(Date.parse(answered.updatedAt), Date.parse(reviewDate));
   assert.equal((await edit({ reason: "outro", comment: "Alteração bloqueada" })).status, 409);
   const stillAnswered = (await (await fetch(lookupUrl)).json()).request;
   assert.equal(stillAnswered.reason, "falta_som");
@@ -139,13 +162,16 @@ try {
   assert.equal((await fetch(`${base}/api/pedidos/INVALIDO`, { method: "DELETE", headers: { "X-Confirm-Cancel": "true" } })).status, 400);
   for (const status of ["enviado", "em_analise"]) {
     const cancellationKey = randomUUID();
-    const cancellationId = `urn:ngsi-ld:${type}:${cancellationKey}`;
-    const directCancellationUrl = new URL(`v2/entities/${encodeURIComponent(cancellationId)}?type=${encodeURIComponent(type)}`, `${brokerBase.href.replace(/\/$/, "")}/`);
-    cancellationRecords.push(directCancellationUrl);
-    const another = await post(draft, cancellationKey);
+    const another = await post(status === "enviado" ? { ...draft, comment: "a".repeat(280) } : { crossingCode: code, reason: "botao_cartao" }, cancellationKey);
     assert.equal(another.status, 201);
     const anotherProtocol = (await another.json()).request.protocol;
+    assert.notEqual(anotherProtocol, result.request.protocol);
+    const cancellationId = `urn:ngsi-ld:${type}:${anotherProtocol}`;
+    const directCancellationUrl = new URL(`v2/entities/${encodeURIComponent(cancellationId)}?type=${encodeURIComponent(type)}`, `${brokerBase.href.replace(/\/$/, "")}/`);
+    cancellationRecords.push(directCancellationUrl);
     const cancelUrl = `${base}/api/pedidos/${anotherProtocol}`;
+    const anotherDetails = (await (await fetch(cancelUrl)).json()).request;
+    assert.equal(anotherDetails.comment.length, status === "enviado" ? 280 : 0);
     if (status === "em_analise") {
       const statusChange = await fetch(`${directCancellationUrl.origin}${directCancellationUrl.pathname}/attrs${directCancellationUrl.search}`, { method: "PATCH", headers: { ...brokerHeaders, "Content-Type": "application/json" }, body: JSON.stringify({ status: { type: "Text", value: status } }) });
       assert.equal(statusChange.status, 204);
@@ -176,7 +202,7 @@ try {
     const cleanup = await fetch(cleanupUrl, { method: "DELETE", headers: brokerHeaders }).catch(() => null);
     if (cleanup && ![204, 404].includes(cleanup.status)) console.error("Verifique a limpeza de um pedido temporário de cancelamento.");
   }
-  const cleanup = await fetch(rawUrl, { method: "DELETE", headers: brokerHeaders }).catch(() => null);
+  const cleanup = rawUrl ? await fetch(rawUrl, { method: "DELETE", headers: brokerHeaders }).catch(() => null) : null;
   if (cleanup && ![204, 404].includes(cleanup.status)) console.error(`Verifique a limpeza da entidade ${requestId}.`);
   if (crossingCreated) {
     const cleanupCrossing = await fetch(`${base}/api/admin/cruzamentos/${code}`, { method: "DELETE", headers: adminHeaders }).catch(() => null);

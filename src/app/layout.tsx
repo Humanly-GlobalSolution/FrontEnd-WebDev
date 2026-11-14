@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "@fontsource/atkinson-hyperlegible-next/latin-400.css";
 import "@fontsource/atkinson-hyperlegible-next/latin-700.css";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <footer className="site-width site-footer">
           <p>Farol Amigo · Humanly · CitizenTech</p>
           <p>Protótipo acadêmico. Sem vínculo de atendimento com a CET.</p>
+          <p><Link href="/painel" className="footer-operator-link">Área do operador</Link></p>
         </footer>
       </body>
     </html>

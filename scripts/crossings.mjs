@@ -6,7 +6,7 @@ const { values, positionals } = parseArgs({ allowPositionals: true, options: {
   code: { type: "string" }, address: { type: "string" }, width: { type: "string" }, seconds: { type: "string" }, confirm: { type: "boolean", default: false },
 } });
 const [action] = positionals;
-if (!["list", "get", "create", "update", "delete"].includes(action)) throw new Error("Use list, get, create, update ou delete. Consulte docs/orion-local.md.");
+if (!["list", "get", "create", "update", "delete"].includes(action)) throw new Error("Use list, get, create, update ou delete. Consulte README.md.");
 if (action !== "list" && !values.code) throw new Error("Informe --code.");
 if (action === "delete" && !values.confirm) throw new Error("Confirme a exclusão deste código com --confirm.");
 if (!process.env.ADMIN_API_TOKEN) throw new Error("Configure ADMIN_API_TOKEN em .env.local.");

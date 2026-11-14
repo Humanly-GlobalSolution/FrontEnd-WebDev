@@ -1,16 +1,16 @@
 import type { CreatedReviewRequest, ReviewRequestDetails, ReviewRequestDraft, ReviewRequestEdit } from "@/types/reviewRequest";
 import { HttpClientError, requestJson } from "@/lib/httpClient";
-import { requestKeyFromProtocol, validateReviewDraft } from "@/lib/reviewRequests";
+import { isValidProtocol, validateReviewDraft } from "@/lib/reviewRequests";
 
-function readDetails(value: unknown): ReviewRequestDetails {
+export function readDetails(value: unknown): ReviewRequestDetails {
   if (!value || typeof value !== "object") throw new Error("O pedido retornou uma resposta inválida. Consulte o protocolo novamente.");
   const item = value as Record<string, unknown>;
-  if (typeof item.protocol !== "string" || !requestKeyFromProtocol(item.protocol)
+  if (typeof item.protocol !== "string" || !isValidProtocol(item.protocol)
     || typeof item.crossingCode !== "string" || typeof item.address !== "string"
-    || typeof item.reason !== "string" || typeof item.comment !== "string" || validateReviewDraft(item.reason, item.comment).reason
-    || !["enviado", "em_analise", "respondido"].includes(String(item.status))
+    || typeof item.reason !== "string" || typeof item.comment !== "string" || validateReviewDraft(item.reason, item.comment).reason || validateReviewDraft(item.reason, item.comment).comment
+    || typeof item.status !== "string" || !["enviado", "em_analise", "respondido"].includes(item.status)
     || typeof item.createdAt !== "string" || Number.isNaN(Date.parse(item.createdAt))
-    || ["reviewedAt", "answeredAt"].some((key) => item[key] !== undefined && (typeof item[key] !== "string" || Number.isNaN(Date.parse(item[key] as string))))
+    || typeof item.updatedAt !== "string" || Number.isNaN(Date.parse(item.updatedAt))
     || (item.response !== undefined && typeof item.response !== "string")) throw new Error("O pedido retornou dados inválidos. Consulte o protocolo novamente.");
   return item as ReviewRequestDetails;
 }
@@ -18,7 +18,7 @@ function readDetails(value: unknown): ReviewRequestDetails {
 export async function sendReviewRequest(draft: ReviewRequestDraft, key: string): Promise<CreatedReviewRequest> {
   const result = await requestJson("/api/pedidos", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(draft) }, { fallbackMessage: "A confirmação do envio não pôde ser lida. Tente novamente nesta página para recuperar seu protocolo." });
   const item = result.request as CreatedReviewRequest | undefined;
-  if (!item || typeof item.protocol !== "string" || !requestKeyFromProtocol(item.protocol) || item.status !== "enviado" || typeof item.crossingCode !== "string" || typeof item.createdAt !== "string" || Number.isNaN(Date.parse(item.createdAt))) throw new Error("A confirmação não pôde ser lida. Tente novamente nesta página para recuperar seu protocolo.");
+  if (!item || typeof item.protocol !== "string" || !isValidProtocol(item.protocol) || item.status !== "enviado" || typeof item.crossingCode !== "string" || typeof item.createdAt !== "string" || Number.isNaN(Date.parse(item.createdAt))) throw new Error("A confirmação não pôde ser lida. Tente novamente nesta página para recuperar seu protocolo.");
   return item;
 }
 

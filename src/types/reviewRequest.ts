@@ -16,6 +16,5 @@ export type ReviewRequestDetails = Omit<CreatedReviewRequest, "status"> & {
   reason: ReviewReason;
   comment: string;
   response?: string;
-  reviewedAt?: string;
-  answeredAt?: string;
+  updatedAt: string;
 };

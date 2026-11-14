@@ -8,9 +8,9 @@ import { validateCrossingInput } from "@/lib/crossingInput";
 function crossingMapping() {
   const mapping = {
     code: process.env.ORION_CODE_ATTRIBUTE || "codigo",
-    address: process.env.ORION_ADDRESS_ATTRIBUTE || "endereco",
-    width: process.env.ORION_WIDTH_ATTRIBUTE || "largura",
-    time: process.env.ORION_TIME_ATTRIBUTE || "tempoAtual",
+    address: process.env.ORION_ADDRESS_ATTRIBUTE || "nome",
+    width: process.env.ORION_WIDTH_ATTRIBUTE || "largura_m",
+    time: process.env.ORION_TIME_ATTRIBUTE || "verde_atual_s",
   };
   if (new Set(Object.values(mapping)).size !== 4 || Object.values(mapping).some((name) => !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) || ["id", "type", "__proto__", "constructor", "prototype"].includes(name))) throw new OrionError("O mapeamento dos atributos do Orion é inválido.", 503);
   return mapping;
@@ -24,10 +24,14 @@ export function getCrossingsSource(): CrossingsSource {
 
 export async function listCrossingsServer(): Promise<CrossingsResponse> {
   const source = getCrossingsSource();
-  if (source === "demo") return { source, crossings: demoCrossings.map((crossing) => ({ ...crossing })) };
+  if (source === "demo") return { source, crossings: demoCrossings.map((crossing) => ({ ...crossing, simulated: true })) };
 
+  return { source, crossings: (await listCrossingEntitiesServer()).map((item) => item.crossing) };
+}
+
+export async function listCrossingEntitiesServer() {
   const mapping = crossingMapping();
-  const crossings: Crossing[] = [];
+  const records: { crossing: Crossing; entity: Record<string, unknown> }[] = [];
   const codes = new Set<string>();
   for (let offset = 0; offset < 10000; offset += 100) {
     const query = new URLSearchParams({ type: process.env.ORION_CROSSING_TYPE || "Cruzamento", options: "keyValues", limit: "100", offset: String(offset), orderBy: "id" });
@@ -39,12 +43,12 @@ export async function listCrossingsServer(): Promise<CrossingsResponse> {
         const normalizedCode = crossing.code.toUpperCase();
         if (codes.has(normalizedCode)) throw new Error("Código duplicado.");
         codes.add(normalizedCode);
-        crossings.push(crossing);
+        records.push({ crossing, entity: entity as Record<string, unknown> });
       }
     } catch {
       throw new OrionError("Os dados do Orion não correspondem ao contrato de cruzamentos. Verifique a configuração com o responsável pelo serviço.");
     }
-    if (data.length < 100) return { source, crossings };
+    if (data.length < 100) return records;
   }
   throw new OrionError("A lista de cruzamentos excedeu o limite de consulta.");
 }
@@ -56,6 +60,10 @@ export async function findCrossing(code: string) {
 
 function requireOrion() {
   if (getCrossingsSource() !== "orion") throw new OrionError("Ative CROSSINGS_SOURCE=orion para administrar cruzamentos persistidos.", 503);
+  const base = process.env.ORION_URL ?? process.env.ORION_BASE_URL;
+  let hostname: string;
+  try { hostname = new URL(base ?? "").hostname; } catch { throw new OrionError("Configure o endereço do Orion.", 503); }
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(hostname)) throw new OrionError("Cruzamentos são somente leitura no servidor compartilhado. O cadastro e os atributos do farol pertencem ao Edge.", 403);
 }
 
 function validatedInput(value: unknown) {

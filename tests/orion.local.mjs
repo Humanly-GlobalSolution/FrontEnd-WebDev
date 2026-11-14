@@ -7,7 +7,7 @@ import { once } from "node:events";
 process.loadEnvFile(".env.local");
 assert.equal(process.env.CROSSINGS_SOURCE, "orion", "Ative a fonte Orion antes deste teste.");
 assert.ok(process.env.ADMIN_API_TOKEN?.length >= 32, "Configure ADMIN_API_TOKEN.");
-const orionBase = new URL(process.env.ORION_BASE_URL);
+const orionBase = new URL(process.env.ORION_URL ?? process.env.ORION_BASE_URL);
 assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(orionBase.hostname), "Este teste aceita apenas Orion local.");
 const brokerHeaders = { Accept: "application/json" };
 if (process.env.ORION_FIWARE_SERVICE) brokerHeaders["Fiware-Service"] = process.env.ORION_FIWARE_SERVICE;
