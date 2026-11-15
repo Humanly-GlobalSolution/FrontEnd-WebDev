@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { OperatorCrossings, OperatorAlerts, crossingAlerts } from "@/components/OperatorCrossings";
 import { OperatorRequests } from "@/components/OperatorRequests";
+import { OperatorNavigation } from "@/components/OperatorNavigation";
 import { useOperatorPanel } from "@/hooks/useOperatorPanel";
 import { requestJson } from "@/lib/httpClient";
 
@@ -22,7 +23,7 @@ export function OperatorDashboard({ onExpired, onLogout }: { onExpired: () => vo
   }
   const alerts = snapshot?.crossings.flatMap(crossingAlerts) ?? [];
   return <div className="operator-shell">
-    <nav className="operator-nav" aria-label="Seções do painel"><span>Operação</span><a href="#operator-overview">Visão geral</a><a href="#operator-crossings">Cruzamentos</a><a href="#operator-alerts">Alertas</a><a href="#operator-requests">Pedidos dos cidadãos</a></nav>
+    <OperatorNavigation />
     <div className="operator-content">
       <header id="operator-overview" className="operator-heading"><div><h1 ref={heading} tabIndex={-1}>Painel do operador</h1><p>Monitoramento e atendimento · Farol Amigo</p></div><Button variant="secondary" onClick={logout} loading={leaving}>Sair do painel</Button></header>
       {logoutError ? <p className="field-error" role="alert">{logoutError}</p> : null}

@@ -161,6 +161,35 @@ try {
   assert.equal(await page.locator('.operator-alerts li').filter({hasText:/C0[2-5]/}).count(),0);
   await checkContrast(page);
   await page.screenshot({path:'tmp/painel.png',fullPage:true});
+  // O menu acompanha a rolagem com amortecimento e permanece dentro do painel.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForFunction(() => document.querySelector('.operator-nav')?.dataset.followScroll === 'true');
+  const menuPositions = await page.evaluate(async () => {
+    window.scrollTo(0, 700);
+    const positions = [];
+    for (let frame = 0; frame < 6; frame++) {
+      await new Promise(requestAnimationFrame);
+      positions.push(document.querySelector('.operator-nav').getBoundingClientRect().top);
+    }
+    return positions;
+  });
+  assert.ok(Math.max(...menuPositions) - Math.min(...menuPositions) > 1, 'Menu deve acompanhar o scroll progressivamente');
+  const menuSettled = () => {
+    const nav = document.querySelector('.operator-nav');
+    const rail = document.querySelector('.operator-nav-rail').getBoundingClientRect();
+    const inset = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const expected = rail.top + Math.max(0, Math.min(inset - rail.top, rail.height - nav.offsetHeight));
+    return Math.abs(nav.getBoundingClientRect().top - expected) < 1;
+  };
+  await page.waitForFunction(menuSettled);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForFunction(menuSettled);
+  assert.ok(await page.locator('.operator-nav').evaluate(nav => nav.getBoundingClientRect().bottom <= nav.parentElement.getBoundingClientRect().bottom + 1));
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.waitForFunction(() => !document.querySelector('.operator-nav').hasAttribute('data-follow-scroll'));
+  assert.equal(await page.locator('.operator-nav').evaluate(nav => nav.style.transform), '');
+  assert.equal(await page.locator('.operator-nav').evaluate(nav => getComputedStyle(nav).position), 'sticky');
+  await page.emulateMedia({reducedMotion:'no-preference'});
   await page.getByRole('button',{name:'Responder pedido',exact:true}).click();
   await page.getByLabel('Resposta ao pedido (obrigatória)').fill('Vamos avaliar o tempo deste cruzamento.');
   await page.getByRole('button',{name:'Registrar resposta',exact:true}).click();
@@ -172,6 +201,8 @@ try {
   assert.equal((await anonymous.cookies()).length,0);
   await checkContrast(citizen);
   await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(() => !document.querySelector('.operator-nav').hasAttribute('data-follow-scroll'));
+  assert.equal(await page.locator('.operator-nav').evaluate(nav => getComputedStyle(nav).position), 'static');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:'tmp/painel-mobile.png',fullPage:true});
   for(const row of crossingCases) {
