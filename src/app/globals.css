@@ -40,9 +40,23 @@ body:has(dialog[open]) { overflow: hidden; }
 h1, h2, p { margin: 0; }
 h1 { max-width: 18ch; font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.025em; text-wrap: balance; }
 .intro p { max-width: 42ch; margin-top: 1.75rem; font-size: 1.25rem; color: #d0d5da; }
-.crosswalk { display: flex; gap: clamp(0.4rem, 1.4vw, 0.85rem); max-width: 30rem; height: 2.5rem; margin-top: 2.75rem; }
+.crosswalk { position: relative; display: flex; gap: clamp(0.4rem, 1.4vw, 0.85rem); max-width: 30rem; height: 2.5rem; margin-top: 2.75rem; }
 .crosswalk span { flex: 1; background: white; border-radius: 0.15rem; }
 .crosswalk .extra-time { background: var(--color-road); }
+.crosswalk-traveler { position: absolute; inset: auto 1.75rem 0.6rem 0; height: 3.5rem; pointer-events: none; transform: translateX(100%); animation: crosswalk-travel 4.8s cubic-bezier(0.37, 0, 0.63, 1) infinite both; }
+.crosswalk-pedestrian { position: absolute; left: -1.75rem; width: 3.5rem; height: 3.5rem; color: white; filter: drop-shadow(0 2px 1px var(--color-asphalt)); }
+.crosswalk-pedestrian .pedestrian-body { transform-origin: 24px 30px; animation: pedestrian-bob 0.6s ease-in-out infinite; }
+.crosswalk-pedestrian .pedestrian-arm-front, .crosswalk-pedestrian .pedestrian-arm-back { transform-origin: 23px 19px; animation: pedestrian-arm 0.6s ease-in-out infinite; }
+.crosswalk-pedestrian .pedestrian-leg-front, .crosswalk-pedestrian .pedestrian-leg-back { transform-origin: 21px 30px; animation: pedestrian-leg 0.6s ease-in-out infinite; }
+.crosswalk-pedestrian .pedestrian-arm-back { animation-name: pedestrian-leg; }
+.crosswalk-pedestrian .pedestrian-leg-back { animation-name: pedestrian-arm; }
+@keyframes crosswalk-travel { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes pedestrian-bob { 0%, 50%, 100% { transform: translateY(0); } 25%, 75% { transform: translateY(-1.5px); } }
+@keyframes pedestrian-arm { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(65deg); } }
+@keyframes pedestrian-leg { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-65deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .crosswalk-traveler, .crosswalk-pedestrian .pedestrian-body, .crosswalk-pedestrian .pedestrian-arm-front, .crosswalk-pedestrian .pedestrian-arm-back, .crosswalk-pedestrian .pedestrian-leg-front, .crosswalk-pedestrian .pedestrian-leg-back { animation: none; }
+}
 h2 { max-width: 30ch; font-size: 1.65rem; font-weight: 700; line-height: 1.25; text-wrap: balance; }
 .site-footer { padding-block: 1.5rem 2rem; border-top: 1px solid #cbd0d6; font-size: 0.95rem; color: var(--color-muted); }
 .site-footer p + p { margin-top: 0.35rem; }

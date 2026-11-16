@@ -1,4 +1,5 @@
 import { CrossingSearch } from "@/components/CrossingSearch";
+import { PedestrianGlyph } from "@/components/PedestrianGlyph";
 
 export default function Home() {
   return (
@@ -11,6 +12,11 @@ export default function Home() {
             {Array.from({ length: 13 }, (_, index) => (
               <span key={index} className={index > 8 ? "extra-time" : undefined} />
             ))}
+            <div className="crosswalk-traveler">
+              <svg className="crosswalk-pedestrian" viewBox="0 0 48 48" fill="none">
+                <PedestrianGlyph />
+              </svg>
+            </div>
           </div>
         </div>
       </section>
