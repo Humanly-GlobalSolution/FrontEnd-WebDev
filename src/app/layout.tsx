@@ -3,6 +3,7 @@ import Link from "next/link";
 import "@fontsource/atkinson-hyperlegible-next/latin-400.css";
 import "@fontsource/atkinson-hyperlegible-next/latin-700.css";
 import { SiteHeader } from "@/components/SiteHeader";
+import { InitialLoader } from "@/components/InitialLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR">
       <body>
+        <InitialLoader />
         <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
         <SiteHeader />
         {children}

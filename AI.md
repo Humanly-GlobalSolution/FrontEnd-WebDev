@@ -5,3 +5,5 @@ As interações envolveram a interpretação dos materiais fornecidos, o esclare
 Também foram discutidos conceitos relacionados a lint, tipagem, build, testes HTTP e operações CRUD, al?m do funcionamento dos recursos utilizados no Azure.
 
 A implementação, a escrita do código, as verificações técnicas, a revisão e a documentação do projeto ficaram sob responsabilidade da equipe, sem utilização de inteligência artificial para executar ou concluir essas atividades.
+
+O ChatGPT foi utilizado para criação do gif utilizado no pré loader
