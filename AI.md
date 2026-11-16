@@ -6,4 +6,4 @@ Também foram discutidos conceitos relacionados a lint, tipagem, build, testes H
 
 A implementação, a escrita do código, as verificações técnicas, a revisão e a documentação do projeto ficaram sob responsabilidade da equipe, sem utilização de inteligência artificial para executar ou concluir essas atividades.
 
-O ChatGPT foi utilizado para criação do gif utilizado no pré loader
+Além do apoio conceitual, o ChatGPT também foi utilizado na criação do GIF exibido no pré-loader do site.
