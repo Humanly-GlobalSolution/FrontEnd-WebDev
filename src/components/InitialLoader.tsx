@@ -5,7 +5,7 @@ import { MultimediaMark } from "@/components/MultimediaMark";
 
 // Six frames at 350 ms each in the supplied GIF.
 const CROSSING_DURATION_MS = 2100;
-const EXIT_DURATION_MS = 280;
+const EXIT_DURATION_MS = 800;
 
 export function InitialLoader() {
   const imageRef = useRef<HTMLImageElement>(null);
