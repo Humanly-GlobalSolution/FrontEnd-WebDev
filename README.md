@@ -138,17 +138,9 @@ npm run test:docker
 
 Os testes cobrem cálculos, contrato NGSI-v2, CRUD, protocolos, acesso ao painel, status, paginação e falhas HTTP, usando dados isolados e broker em memória, sem escrever na Azure. `npm run test:docker` executa dois roteiros contra o Orion real em `127.0.0.1:1026`, com credenciais efêmeras de teste para o Next, sem editar `.env.local`. Requer Orion/MongoDB locais ativos e build concluído. Cria/exclui somente entidades temporárias próprias e compara os registros antes/depois. Os testes individuais `test:orion:local` e `test:pedidos:local` também aceitam apenas Orion local. O CRUD com escritas reais na Azure ainda depende de autorização e validação; dispositivos físicos e leitores de tela não foram testados.
 
-## Publicação e entrega
-
-**Publicação na Vercel pendente:** configurar as variáveis acima, `ADMIN_API_TOKEN` e `REQUEST_PROTOCOL_SECRET` no servidor da Vercel e realizar o deploy. O trecho Next → Orion continua em HTTP público e sem autenticação; HTTPS e restrição do acesso direto ao broker dependem da configuração do Bruno. A proteção do painel não protege o Orion diretamente.
-
-Antes da entrega, conferir:
-
-- Repositório **privado**, com pelo menos **15 commits significativos**, link correto e acesso de **escrita para os dois professores**.
-- Link do site publicado e funcionando, além de README e [AI.md](AI.md) na raiz. Conferir o AI.md com a seção 3 do edital, não presente nos prints disponíveis.
-- ZIP atualizado com os arquivos necessários; excluir `.git`, `.env.local`, `node_modules`, `.next`, caches e temporários.
-- Envio da **mesma aplicação separadamente nas duas disciplinas**, no Microsoft Teams, incluindo link do repositório, ZIP e link do deploy.
-
+## Links do Trabalho
+- Link do repositório do github: https://github.com/Humanly-GlobalSolution/FrontEnd-WebDev
+- Link do deploy na vercel: https://farol-amigo-6ktowyn6u-eduardocraveiro.vercel.app/
 ## Referências
 
 - [Protótipo Figma](https://www.figma.com/design/nHm3SZXp7YdzztSLdtm543)
