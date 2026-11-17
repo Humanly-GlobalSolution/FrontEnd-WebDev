@@ -140,7 +140,7 @@ Os testes cobrem cálculos, contrato NGSI-v2, CRUD, protocolos, acesso ao painel
 
 ## Links do Trabalho
 - Link do repositório do github: https://github.com/Humanly-GlobalSolution/FrontEnd-WebDev
-- Link do deploy na vercel: https://farol-amigo-6ktowyn6u-eduardocraveiro.vercel.app/
+- Link do deploy na vercel: https://farol-amigo.vercel.app/
 ## Referências
 
 - [Protótipo Figma](https://www.figma.com/design/nHm3SZXp7YdzztSLdtm543)
