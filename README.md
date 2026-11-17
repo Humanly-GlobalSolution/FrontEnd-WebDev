@@ -78,6 +78,15 @@ O setup também gera `ADMIN_API_TOKEN` (acesso administrativo) e `REQUEST_PROTOC
 
 **Painel do operador:** abra [http://localhost:3000/painel](http://localhost:3000/painel) ou o link no rodapé. No campo “Código de acesso”, informe apenas o valor de `ADMIN_API_TOKEN` do seu `.env.local`. A sessão usa cookie HttpOnly assinado, expira em oito horas e pode ser encerrada em “Sair”. O cidadão não precisa desse código.
 
+### Senha do painel do operador
+
+A senha para acessar o painel do operador nesta entrega é o valor de `ADMIN_API_TOKEN`:
+
+Presente no arquivo .env.local
+
+Abra `/painel` e digite essa senha no campo **Código de acesso**, sem incluir o prefixo `ADMIN_API_TOKEN=`. Ela permite acessar o painel do operador para acompanhar os cruzamentos e analisar e responder aos pedidos de revis?o.
+
+
 ## CRUD e regras de acesso
 
 | Operação | Rota do Next | Operação no Orion |
